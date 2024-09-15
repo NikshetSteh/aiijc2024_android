@@ -97,8 +97,10 @@
 import os
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.general import non_max_suppression, scale_boxes
-from yolov5.utils.torch_utils import select_device
+# from yolov5.utils.torch_utils import select_device
 from os.path import dirname, join
+import cv2
+import torch
 
 
 def is_inside(inner, outer):
@@ -110,15 +112,14 @@ def detect_and_count_pipes(weights, img_path, imgsz):
     # resize_image(img_path, imgsz)
 
     # Загрузка модели
-    device = select_device('')
-    model = attempt_load(weights, device)
+    model = attempt_load(weights)
     model.eval()
 
     # Подсчет труб
     img = cv2.imread(img_path)
     img_resized = cv2.resize(img, (imgsz, imgsz))
     img_tensor = torch.from_numpy(img_resized).permute(2, 0, 1).float().unsqueeze(0) / 255.0
-    img_tensor = img_tensor.to(device)
+    img_tensor = img_tensor.cpu()
 
     with torch.no_grad():
         pred = model(img_tensor)[0]
@@ -149,8 +150,10 @@ def detect_and_count_pipes(weights, img_path, imgsz):
 
 
 def main(image_path):
+    if image_path.startswith("file://"):
+        image_path = image_path[7:]
     # Путь к модели
-    weights = os.path.getsize(join(dirname(__file__), "model.pt"))
+    weights = join(dirname(__file__), "model.pt")
     # Размер изображения
     imgsz = 640
 

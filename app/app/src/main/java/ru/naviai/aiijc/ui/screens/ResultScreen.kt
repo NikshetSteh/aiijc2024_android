@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,9 +31,17 @@ import java.io.InputStream
 fun ResultScreen(imageUri: Uri, navController: NavController) {
     Log.i("kilo", imageUri.toString())
 
-    val py = Python.getInstance()
-    val pyobj = py.getModule("main")
-    val obj = pyobj.callAttr("main", imageUri.toString())
+    var isReady by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf("") }
+
+
+    if (!isReady) {
+        val py = Python.getInstance()
+        val pyobj = py.getModule("main")
+        val obj = pyobj.callAttr("main", imageUri.toString())
+        result = obj.toString()
+        isReady = true
+    }
 
     val context = LocalContext.current
     val inputStream: InputStream? = context.contentResolver.openInputStream(imageUri)
@@ -51,7 +63,7 @@ fun ResultScreen(imageUri: Uri, navController: NavController) {
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             Text(
-                "Кол-во труб: $obj",
+                "Кол-во труб: $result",
                 color = Color.White
             )
             Button(
@@ -62,4 +74,3 @@ fun ResultScreen(imageUri: Uri, navController: NavController) {
         }
     }
 }
-
