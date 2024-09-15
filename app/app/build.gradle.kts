@@ -58,7 +58,9 @@ android {
 chaquopy {
     defaultConfig {
         pip {
-            install("opencv-python")
+            //==1.13.1
+            install("torch")
+            install("yolov5==7.0.0")
         }
     }
 }
