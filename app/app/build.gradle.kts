@@ -72,13 +72,16 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.camera:camera-extensions:1.3.4")
 
-    testImplementation("junit:junit:4.13.2")
+//    testImplementation("junit:junit:4.13.2")
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+//    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     implementation("androidx.navigation:navigation-compose:2.8.2")
+
+    implementation("org.pytorch:pytorch_android_lite:2.1.0")
+//    implementation("org.pytorch:pytorch_android_torchvision:2.1.0")
 
     implementation("io.github.rroohit:ImageCropView:3.0.1")
 }

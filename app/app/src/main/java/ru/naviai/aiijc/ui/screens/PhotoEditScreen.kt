@@ -3,13 +3,11 @@ package ru.naviai.aiijc.ui.screens
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -42,15 +40,10 @@ fun PhotoEditScreen(
     imageUri: Uri,
     navController: NavController
 ) {
-    Log.i("kilo", "PhotoEditScreen")
-
     val context = LocalContext.current
     val inputStream: InputStream? = context.contentResolver.openInputStream(imageUri)
 
     val bitmap = BitmapFactory.decodeStream(inputStream)
-
-    Log.i("kilo", bitmap.height.toString())
-    Log.i("kilo", bitmap.width.toString())
 
     val imageCrop = ImageCrop(bitmap)
     var type by remember {

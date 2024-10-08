@@ -2,7 +2,6 @@ package ru.naviai.aiijc.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Text
@@ -17,8 +16,6 @@ import androidx.navigation.NavController
 
 @Composable
 fun CameraPermissionScreen(navController: NavController) {
-    Log.i("kilo", "Check permissions")
-
     val context = LocalContext.current
     var permissionGranted by remember { mutableStateOf(false) }
     var alreadyRequestPermission by remember { mutableStateOf(false) }

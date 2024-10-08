@@ -59,9 +59,6 @@ fun CameraScreen(
                     onPhotoTaken = {
                         val uri = it.toUri(applicationContext)
 
-                        Log.i("kilo", "Photo is ready")
-                        Log.i("kilo", uri.toString())
-
                         val encodedUrl = URLEncoder.encode(
                             uri.toString(),
                             StandardCharsets.UTF_8.toString()

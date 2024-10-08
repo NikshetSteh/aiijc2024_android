@@ -22,8 +22,4 @@ fun CameraPreview(
         },
         modifier = modifier
     )
-
-
-
-
 }
