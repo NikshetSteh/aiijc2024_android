@@ -5,16 +5,22 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -23,12 +29,13 @@ import androidx.navigation.NavController
 import com.image.cropview.CropType
 import com.image.cropview.EdgeType
 import com.image.cropview.ImageCrop
-import ru.naviai.aiijc.ui.DropdownSelection
+import ru.naviai.aiijc.ui.SelectField
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+
 
 @Composable
 fun PhotoEditScreen(
@@ -46,52 +53,79 @@ fun PhotoEditScreen(
     Log.i("kilo", bitmap.width.toString())
 
     val imageCrop = ImageCrop(bitmap)
+    var type by remember {
+        mutableStateOf("Circle")
+    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        imageCrop.ImageCropView(
-            modifier = Modifier.padding(4.dp),
-            guideLineColor = Color.LightGray,
-            guideLineWidth = 2.dp,
-            edgeCircleSize = 5.dp,
-            showGuideLines = true,
-            cropType = CropType.FREE_STYLE,
-            edgeType = EdgeType.CIRCULAR
-        )
-
+    Column(
+        modifier = Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.Center
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceAround
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            val profilesTypes = mutableMapOf<String, String>()
-            profilesTypes["Круглый"] = "circle"
+            imageCrop.ImageCropView(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .width(300.dp)
+                    .height((300 * 1.78).dp),
+                guideLineColor = Color.LightGray,
+                guideLineWidth = 2.dp,
+                edgeCircleSize = 5.dp,
+                showGuideLines = true,
+                cropType = CropType.FREE_STYLE,
+                edgeType = EdgeType.CIRCULAR,
+            )
+        }
 
-            val type = profilesTypes[DropdownSelection(
-                data = profilesTypes.keys.toList(),
-                default = profilesTypes.keys.toList()[0],
-                label = "Тип профиля",
-                modifier = Modifier.width(160.dp)
-            )]
+        Spacer(modifier = Modifier.height(8.dp))
 
-            Button(onClick = {
-                val finalBitmap = imageCrop.onCrop()
-
-                val file = File(context.cacheDir, "temp_image.png")
-                val outputStream = FileOutputStream(file)
-                finalBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                outputStream.flush()
-                outputStream.close()
-
-                val encodedUrl = URLEncoder.encode(
-                    Uri.fromFile(file).toString(),
-                    StandardCharsets.UTF_8.toString()
+        Column {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            {
+                SelectField(
+                    options = listOf("Circle"),
+                    label = "Тип",
+                    value = type,
+                    onChange = {
+                        type = it
+                    }
                 )
+            }
 
-                navController.navigate("result/$type/$encodedUrl")
-            }) {
-                Text("Далее")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(onClick = {}) {
+                    Text(text = "Назад")
+                }
+
+                Button(
+                    onClick = {
+                        val finalBitmap = imageCrop.onCrop()
+
+                        val file = File(context.cacheDir, "temp_image.png")
+                        val outputStream = FileOutputStream(file)
+                        finalBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        outputStream.flush()
+                        outputStream.close()
+
+                        val encodedUrl = URLEncoder.encode(
+                            Uri.fromFile(file).toString(),
+                            StandardCharsets.UTF_8.toString()
+                        )
+
+                        navController.navigate("result/$type/$encodedUrl")
+                    }) {
+                    Text("Далее")
+                }
             }
         }
     }
