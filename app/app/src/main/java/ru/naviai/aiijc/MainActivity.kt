@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ru.naviai.aiijc.ui.screens.CameraPermissionScreen
 import ru.naviai.aiijc.ui.screens.CameraScreen
+import ru.naviai.aiijc.ui.screens.MainScreen
 import ru.naviai.aiijc.ui.screens.PhotoEditScreen
 import ru.naviai.aiijc.ui.screens.ResultScreen
 import ru.naviai.aiijc.ui.theme.Aiijc2024Theme
@@ -112,31 +113,34 @@ fun AppNavHost(
     applicationContext: Context,
     cameraController: LifecycleCameraController
 ) {
-    NavHost(navController = navController, startDestination = "home") {
-        composable("home") { CameraScreen(applicationContext, navController, cameraController) }
-        composable("crop/{imageUri}") { backStackEntry ->
-            val imageUri = backStackEntry.arguments?.getString("imageUri")
-            imageUri?.let {
-                PhotoEditScreen(
-                    it.toUri(),
-                    navController
-                )
-            }
-        }
-        composable("result/{type}/{imageUri}") { backStackEntry ->
-            val imageUri = backStackEntry.arguments?.getString("imageUri")
-//            val type = backStackEntry.arguments?.getString("type")
-            imageUri?.let {
-                ResultScreen(
-                    it.toUri(),
-                    navController
-                )
-            }
-        }
-        composable("permission") {
-            CameraPermissionScreen(navController)
-        }
-    }
+    MainScreen(
+    )
+
+//    NavHost(navController = navController, startDestination = "home") {
+//        composable("home") { CameraScreen(applicationContext, navController, cameraController) }
+//        composable("crop/{imageUri}") { backStackEntry ->
+//            val imageUri = backStackEntry.arguments?.getString("imageUri")
+//            imageUri?.let {
+//                PhotoEditScreen(
+//                    it.toUri(),
+//                    navController
+//                )
+//            }
+//        }
+//        composable("result/{type}/{imageUri}") { backStackEntry ->
+//            val imageUri = backStackEntry.arguments?.getString("imageUri")
+////            val type = backStackEntry.arguments?.getString("type")
+//            imageUri?.let {
+//                ResultScreen(
+//                    it.toUri(),
+//                    navController
+//                )
+//            }
+//        }
+//        composable("permission") {
+//            CameraPermissionScreen(navController)
+//        }
+//    }
 }
 
 

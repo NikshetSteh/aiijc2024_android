@@ -61,8 +61,8 @@ fun PhotoEditScreen(
             imageCrop.ImageCropView(
                 modifier = Modifier
                     .padding(8.dp)
-                    .width(300.dp)
-                    .height((300 * 1.78).dp),
+                    .width(320.dp)
+                    .height(320.dp),
                 guideLineColor = Color.LightGray,
                 guideLineWidth = 2.dp,
                 edgeCircleSize = 5.dp,
@@ -105,10 +105,10 @@ fun PhotoEditScreen(
                         val finalBitmap = imageCrop.onCrop()
 
                         val file = File(context.cacheDir, "temp_image.png")
-                        val outputStream = FileOutputStream(file)
-                        finalBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                        outputStream.flush()
-                        outputStream.close()
+//                        val outputStream = FileOutputStream(file)
+//                        finalBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+//                        outputStream.flush()
+//                        outputStream.close()
 
                         val encodedUrl = URLEncoder.encode(
                             Uri.fromFile(file).toString(),

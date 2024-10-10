@@ -12,10 +12,11 @@ import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,13 +40,20 @@ fun CameraScreen(
 ) {
     Log.i("kilo", "Home screen")
 
-    Box(modifier = modifier) {
-        CameraPreview(
-            controller = cameraController,
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(),
-        )
+    Box(modifier = modifier.fillMaxSize()) {
+        Row (
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+
+            CameraPreview(
+                modifier = Modifier.width(320.dp).height(320.dp)
+//            modifier = Modifier
+//                .height(320.dp)
+//                .width(320.dp),
+//                .fillMaxSize()
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -112,7 +120,7 @@ private fun takePhoto(
 }
 
 fun Bitmap.toUri(context: Context): Uri {
-    val file = File(context.cacheDir, "tempImage.jpg")
+    val file = File(context.cacheDir, "temp_image.png")
     try {
         FileOutputStream(file).use { out ->
             this.compress(Bitmap.CompressFormat.JPEG, 100, out)

@@ -98,6 +98,7 @@ fun SelectField(
     options: List<String>,
     onChange: (String)->Unit,
     value: String,
+    disabled: Boolean = false
 ) {
     var menuExpanded by remember {
         mutableStateOf(false)
@@ -140,7 +141,7 @@ fun SelectField(
                     }
                 } else {
                     IconButton(onClick = {
-                        menuExpanded = true
+                        menuExpanded = true && !disabled
                     }) {
                         Icon(
                             painter = painterResource(id = R.drawable.arrow_drop_down),
