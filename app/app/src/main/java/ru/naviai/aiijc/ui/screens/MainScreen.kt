@@ -3,29 +3,23 @@ package ru.naviai.aiijc.ui.screens
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.camera.core.ImageCapture
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.image.cropview.ImageCrop
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ModelResults
 import ru.naviai.aiijc.scaleBitmapWithBlackMargins
@@ -34,6 +28,8 @@ import ru.naviai.aiijc.ui.fragments.Crop
 import ru.naviai.aiijc.ui.fragments.CropBottom
 import ru.naviai.aiijc.ui.fragments.PhotoBottom
 import ru.naviai.aiijc.ui.fragments.PhotoTop
+import ru.naviai.aiijc.ui.fragments.Results
+import ru.naviai.aiijc.ui.fragments.ResultsBottom
 
 enum class ScreenState {
     Camera, Crop, Result
@@ -60,7 +56,7 @@ fun MainScreen() {
     var isLoading by remember { mutableStateOf(false) }
     var needPrediction by remember { mutableStateOf(false) }
 
-    var resultBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var prediction by remember { mutableStateOf<ModelResults?>(null) }
 
     if (needPrediction) {
         needPrediction = false
@@ -69,7 +65,7 @@ fun MainScreen() {
             currentBitmap!!,
             onResult = {
                 isLoading = false
-                resultBitmap = it.bitmap
+                prediction = it
                 Log.i("kilo", it.count.toString())
             }
         )
@@ -83,30 +79,19 @@ fun MainScreen() {
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
         ) {
-            if (state == ScreenState.Camera) {
-                imageCapture = PhotoTop()
-            } else if (state == ScreenState.Crop) {
-                imageCrop = Crop(currentBitmap)
-            } else {
-                if (resultBitmap != null) {
-                    Image(
-                        bitmap = resultBitmap!!.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .width(320.dp)
-                            .height(320.dp)
+            when (state) {
+                ScreenState.Camera -> {
+                    imageCapture = PhotoTop()
+                }
+
+                ScreenState.Crop -> {
+                    imageCrop = Crop(currentBitmap)
+                }
+
+                else -> {
+                    Results(
+                        prediction?.bitmap
                     )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .width(320.dp)
-                            .height(320.dp),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.width(64.dp),
-                        )
-                    }
                 }
             }
         }
@@ -140,12 +125,17 @@ fun MainScreen() {
                 }
 
                 else -> {
-                    Button(
-                        onClick = {},
-                        enabled = !isLoading
-                    ) {
-                        Text("Restart")
-                    }
+                    ResultsBottom(
+                        onRestart = {
+                            isLoading = true
+                            needPrediction = true
+                        },
+                        onNewImage = {
+                            state = ScreenState.Camera
+                        },
+                        isLoading = isLoading,
+                        count = if (prediction != null) prediction?.count else null
+                    )
                 }
             }
         }
