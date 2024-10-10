@@ -45,16 +45,16 @@ fun Results(
 
 @Composable
 fun ResultsBottom(
-    onRestart: () -> Unit,
+    onReload: () -> Unit,
     onNewImage: () -> Unit,
     isLoading: Boolean,
     count: Int?
 ) {
     Button(
-        onClick = onRestart,
+        onClick = onReload,
         enabled = !isLoading
     ) {
-        Text("Restart")
+        Text("Reload")
     }
 
     Box(modifier = Modifier.padding(14.dp)) {

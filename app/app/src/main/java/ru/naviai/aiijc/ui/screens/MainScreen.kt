@@ -126,9 +126,10 @@ fun MainScreen() {
 
                 else -> {
                     ResultsBottom(
-                        onRestart = {
+                        onReload = {
                             isLoading = true
                             needPrediction = true
+                            prediction = null
                         },
                         onNewImage = {
                             state = ScreenState.Camera
