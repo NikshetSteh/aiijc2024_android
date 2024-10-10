@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
-import android.util.Log
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
@@ -34,7 +33,7 @@ fun assetFilePath(context: Context, assetName: String?): String? {
 }
 
 
-class ModelResults (
+class ModelResults(
     val count: Int,
     val bitmap: Bitmap
 )
@@ -49,21 +48,12 @@ class Model(context: Context) {
     fun predict(
         bitmap: Bitmap
     ): ModelResults {
-        Log.i("kilo", bitmap.width.toString())
-        Log.i("kilo", bitmap.height.toString())
 
         val imageTensor = TensorImageUtils.bitmapToFloat32Tensor(
             bitmap,
             floatArrayOf(0.0f, 0.0f, 0.0f),
             floatArrayOf(1.0f, 1.0f, 1.0f)
         )
-
-        Log.i("kilo", imageTensor.shape().toString())
-        Log.i("kilo", imageTensor.shape().size.toString())
-        Log.i("kilo", imageTensor.shape()[0].toString())
-        Log.i("kilo", imageTensor.shape()[1].toString())
-        Log.i("kilo", imageTensor.shape()[2].toString())
-        Log.i("kilo", imageTensor.shape()[3].toString())
 
         val inputValues = IValue.from(imageTensor)
         val output = model.forward(inputValues)

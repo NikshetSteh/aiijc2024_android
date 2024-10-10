@@ -1,7 +1,6 @@
 package ru.naviai.aiijc.ui.screens
 
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.camera.core.ImageCapture
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -66,7 +65,6 @@ fun MainScreen() {
             onResult = {
                 isLoading = false
                 prediction = it
-                Log.i("kilo", it.count.toString())
             }
         )
     }
