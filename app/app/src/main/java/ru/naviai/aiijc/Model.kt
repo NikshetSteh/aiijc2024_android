@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.Log
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
@@ -136,8 +137,10 @@ fun nmsBoxes(boxes: List<List<Float>>, scores: List<Float>, threshold: Float): L
     while (sortedValues.isNotEmpty()) {
         result.add(sortedValues[0].subList(0, 4) + listOf(scores[0], 0f))
 
+        val buffer = sortedValues[0]
+
         sortedValues.removeAll { box ->
-            (iou(box, sortedValues[0]) > threshold) || isInside(box, sortedValues[0])
+            (iou(box, buffer) > threshold) || isInside(box, buffer)
         }
     }
 
@@ -159,10 +162,8 @@ private fun processModelOutput(
 
     val values = tensor.dataAsFloatArray
 
-    var counter = 0
 
     for (i in 0..<(values.size / 6)) {
-        counter += 1
         if (values[i * 6 + 4] < confThres) continue
 
         values[i * 6 + 5] *= values[i * 6 + 4]
@@ -176,5 +177,13 @@ private fun processModelOutput(
         result.add(ArrayList(listOf(box[0], box[1], box[2], box[3], conf, 0f)))
     }
 
-    return nmsBoxes(result, scores, iouThres)
+    val buffer =  nmsBoxes(result, scores, iouThres)
+
+    Log.i("kilo", "boxes: ${buffer.size}")
+
+    for (box in buffer ) {
+        Log.i("kilo", "box: ${box[0]} ${box[1]} ${box[2]} ${box[3]}")
+    }
+
+    return buffer
 }
