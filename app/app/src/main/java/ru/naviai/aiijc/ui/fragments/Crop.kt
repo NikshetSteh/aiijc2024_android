@@ -44,6 +44,6 @@ fun CropBottom(
             imageCrop?.onCrop()?.let { onCrop(it) }
         }
     ) {
-        Text("Далее")
+        Text("Continue")
     }
 }

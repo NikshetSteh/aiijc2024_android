@@ -130,6 +130,7 @@ fun MainScreen() {
                             prediction = null
                         },
                         onNewImage = {
+                            prediction = null
                             state = ScreenState.Camera
                         },
                         isLoading = isLoading,

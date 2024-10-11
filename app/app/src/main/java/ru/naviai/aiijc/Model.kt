@@ -89,7 +89,7 @@ private fun drawRectangleOnBitmap(bitmap: Bitmap, data: List<List<Float>>): Bitm
 
 
 private fun postprocessOutput(tensor: Tensor, bitmap: Bitmap): ModelResults {
-    val objects = processModelOutput(tensor, 0.6f, 0.45f)
+    val objects = processModelOutput(tensor, 0.6f, 0.4f)
 
     return ModelResults(objects.size, drawRectangleOnBitmap(bitmap, objects))
 }
@@ -140,7 +140,7 @@ fun nmsBoxes(boxes: List<List<Float>>, scores: List<Float>, threshold: Float): L
         val buffer = sortedValues[0]
 
         sortedValues.removeAll { box ->
-            (iou(box, buffer) > threshold) || isInside(box, buffer)
+            (iou(box, buffer) > threshold) || isInside(box, buffer) || isInside(buffer, box)
         }
     }
 
