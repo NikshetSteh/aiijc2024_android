@@ -7,26 +7,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.image.cropview.ImageCrop
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,7 +40,10 @@ enum class ScreenState {
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    scope: CoroutineScope,
+    drawerState: DrawerState
+) {
     var state by remember { mutableStateOf(ScreenState.Camera) }
     var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var imageCapture by remember {
@@ -71,9 +66,6 @@ fun MainScreen() {
 
     var prediction by remember { mutableStateOf<ModelResults?>(null) }
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
     if (needPrediction) {
         needPrediction = false
         makePrediction(
@@ -86,124 +78,107 @@ fun MainScreen() {
         )
     }
 
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                Text("Drawer title", modifier = Modifier.padding(16.dp))
-                NavigationDrawerItem(
-                    label = { Text(text = "Drawer Item") },
-                    selected = false,
-                    onClick = { /*TODO*/ }
-                )
-                // ...other drawer items
+    IconButton(onClick = {
+        scope.launch {
+            drawerState.apply {
+                if (isClosed) open() else close()
             }
         }
-    )
-    {
-        IconButton(onClick = {
-            scope.launch {
-                drawerState.apply {
-                    if (isClosed) open() else close()
-                }
-            }
-        }) {
-            Icon(Icons.Outlined.Menu, contentDescription = "Menu")
-        }
-        Column(
-            modifier = Modifier.fillMaxHeight(),
-            verticalArrangement = Arrangement.SpaceEvenly
+    }) {
+        Icon(Icons.Outlined.Menu, contentDescription = "Menu")
+    }
+    Column(
+        modifier = Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                when (state) {
-                    ScreenState.Camera -> {
-                        imageCapture = PhotoTop(flashlight)
-                    }
+            when (state) {
+                ScreenState.Camera -> {
+                    imageCapture = PhotoTop(flashlight)
+                }
 
-                    ScreenState.Crop -> {
-                        imageCrop = Crop(currentBitmap)
-                    }
+                ScreenState.Crop -> {
+                    imageCrop = Crop(currentBitmap)
+                }
 
-                    else -> {
-                        Results(
-                            prediction?.bitmap
-                        )
-                    }
+                else -> {
+                    Results(
+                        prediction?.bitmap
+                    )
                 }
             }
+        }
 
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            {
-                when (state) {
-                    ScreenState.Camera -> {
-                        PhotoBottom(
-                            imageCapture = imageCapture!!,
-                            flashlight,
-                            onCapture = {
-                                currentBitmap = it
-                                state = ScreenState.Crop
-                            },
-                            onFlashLight = {
-                                flashlight = !flashlight
-                            }
-                        )
-                    }
-
-                    ScreenState.Crop -> {
-                        CropBottom(
-                            imageCrop = imageCrop!!,
-                            onCrop = {
-                                currentBitmap = scaleBitmapWithBlackMargins(it)
-                                state = ScreenState.Result
-                                isLoading = true
-                                needPrediction = true
-                            }
-                        )
-                    }
-
-                    else -> {
-                        ResultsBottom(
-                            onReload = {
-                                isLoading = true
-                                needPrediction = true
-                                prediction = null
-                            },
-                            onNewImage = {
-                                prediction = null
-                                state = ScreenState.Camera
-                            },
-                            isLoading = isLoading,
-                            count = if (prediction != null) prediction?.count else null
-                        )
-                    }
-                }
-            }
-
-
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            {
-                SelectField(
-                    options = listOf("Circle"),
-                    label = "Type",
-                    value = type,
-                    onChange = {
-                        if (!isLoading) {
-                            type = it
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        {
+            when (state) {
+                ScreenState.Camera -> {
+                    PhotoBottom(
+                        imageCapture = imageCapture!!,
+                        flashlight,
+                        onCapture = {
+                            currentBitmap = it
+                            state = ScreenState.Crop
+                        },
+                        onFlashLight = {
+                            flashlight = !flashlight
                         }
-                    },
-                    disabled = isLoading
-                )
+                    )
+                }
+
+                ScreenState.Crop -> {
+                    CropBottom(
+                        imageCrop = imageCrop!!,
+                        onCrop = {
+                            currentBitmap = scaleBitmapWithBlackMargins(it)
+                            state = ScreenState.Result
+                            isLoading = true
+                            needPrediction = true
+                        }
+                    )
+                }
+
+                else -> {
+                    ResultsBottom(
+                        onReload = {
+                            isLoading = true
+                            needPrediction = true
+                            prediction = null
+                        },
+                        onNewImage = {
+                            prediction = null
+                            state = ScreenState.Camera
+                        },
+                        isLoading = isLoading,
+                        count = if (prediction != null) prediction?.count else null
+                    )
+                }
             }
+        }
+
+
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        {
+            SelectField(
+                options = listOf("Circle"),
+                label = "Type",
+                value = type,
+                onChange = {
+                    if (!isLoading) {
+                        type = it
+                    }
+                },
+                disabled = isLoading
+            )
         }
     }
 }

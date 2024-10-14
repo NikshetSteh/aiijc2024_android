@@ -71,6 +71,7 @@ dependencies {
 
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.camera:camera-extensions:1.3.4")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     debugImplementation("androidx.compose.ui:ui-tooling")

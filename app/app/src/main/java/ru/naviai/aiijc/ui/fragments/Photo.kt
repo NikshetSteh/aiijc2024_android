@@ -51,9 +51,6 @@ fun PhotoBottom(
 
     var bitmap: Bitmap?
 
-//    var imageUri by remember {
-//        mutableStateOf<Uri?>(null)
-//    }
     val launcher = rememberLauncherForActivityResult(
         contract =
         ActivityResultContracts.GetContent()
@@ -65,6 +62,7 @@ fun PhotoBottom(
                 )
             }?.let { ImageDecoder.decodeBitmap(it) }
         } else {
+            @Suppress("DEPRECATION")
             MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         }
         bitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, false)
