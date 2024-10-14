@@ -54,6 +54,7 @@ fun MainScreen() {
 
     var isLoading by remember { mutableStateOf(false) }
     var needPrediction by remember { mutableStateOf(false) }
+    var flashlight by remember { mutableStateOf(false) }
 
     var prediction by remember { mutableStateOf<ModelResults?>(null) }
 
@@ -79,7 +80,7 @@ fun MainScreen() {
         ) {
             when (state) {
                 ScreenState.Camera -> {
-                    imageCapture = PhotoTop()
+                    imageCapture = PhotoTop(flashlight)
                 }
 
                 ScreenState.Crop -> {
@@ -103,9 +104,13 @@ fun MainScreen() {
                 ScreenState.Camera -> {
                     PhotoBottom(
                         imageCapture = imageCapture!!,
+                        flashlight,
                         onCapture = {
                             currentBitmap = it
                             state = ScreenState.Crop
+                        },
+                        onFlashLight = {
+                            flashlight = !flashlight
                         }
                     )
                 }
