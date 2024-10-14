@@ -1,8 +1,14 @@
 package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.graphics.Matrix
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -44,6 +50,38 @@ fun PhotoBottom(
     val context = LocalContext.current
 
     var bitmap: Bitmap?
+
+//    var imageUri by remember {
+//        mutableStateOf<Uri?>(null)
+//    }
+    val launcher = rememberLauncherForActivityResult(
+        contract =
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            uri?.let {
+                ImageDecoder.createSource(context.contentResolver,
+                    it
+                )
+            }?.let { ImageDecoder.decodeBitmap(it) }
+        } else {
+            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        }
+        bitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, false)
+        bitmap = scaleBitmapWithBlackMargins(
+            bitmap!!,
+            640,
+            640
+        )
+
+        onCapture(bitmap!!)
+    }
+
+    IconButton(onClick = {
+        launcher.launch("image/*")
+    }) {
+        Icon(painterResource(id = R.drawable.upload), contentDescription = "Load image")
+    }
 
     Button(
         onClick = {
