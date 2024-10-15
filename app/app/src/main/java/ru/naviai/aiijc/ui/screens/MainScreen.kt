@@ -24,6 +24,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ModelResults
 import ru.naviai.aiijc.scaleBitmapWithBlackMargins
@@ -44,6 +45,8 @@ fun MainScreen(
     scope: CoroutineScope,
     drawerState: DrawerState
 ) {
+    val resources = LocalContext.current.resources
+
     var state by remember { mutableStateOf(ScreenState.Camera) }
     var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var imageCapture by remember {
@@ -53,7 +56,7 @@ fun MainScreen(
     }
 
     var type by remember {
-        mutableStateOf("Circle")
+        mutableStateOf(resources.getString(R.string.type_circle))
     }
 
     var imageCrop: ImageCrop? = null
@@ -169,8 +172,10 @@ fun MainScreen(
         )
         {
             SelectField(
-                options = listOf("Circle"),
-                label = "Type",
+                options = listOf(
+                    resources.getString(R.string.type_circle)
+                ),
+                label = resources.getString(R.string.label_type),
                 value = type,
                 onChange = {
                     if (!isLoading) {

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="action_photo">Сканировать</string>
+    <string name="label_type">Тип</string>
+    <string name="type_circle">Круглый</string>
+    <string name="label_main">Главная</string>
+    <string name="label_settings">Настройки</string>
+    <string name="label_guide">Инструкция</string>
+    <string name="label_theme">Тема</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_system">Системная</string>
+    <string name="label_language">Язык</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_continue">Продолжить</string>
+    <string name="label_about">О приложении</string>
+    <string name="action_reload">Обновить</string>
+    <string name="action_new_image">Заново</string>
+</resources>

@@ -31,6 +31,8 @@ class MainActivity : ComponentActivity() {
 
         Log.i("kilo", sharedPreferences.getString("theme", "system2").toString())
 
+
+
         setContent {
             Aiijc2024Theme(
                 darkTheme = when {
@@ -96,6 +98,18 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
 
+    }
+
+    override fun attachBaseContext(newBase: Context?) {
+        val sharedPreferences: SharedPreferences =
+            newBase!!.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+
+        if (sharedPreferences.getString("language", "en") == "ru") {
+            super.attachBaseContext(ApplicationLanguageHelper.wrap(newBase, "ru"))
+            return
+        }
+
+        super.attachBaseContext(ApplicationLanguageHelper.wrap(newBase, "en"))
     }
 }
 

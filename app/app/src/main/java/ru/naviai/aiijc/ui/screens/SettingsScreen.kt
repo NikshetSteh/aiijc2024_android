@@ -17,13 +17,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.ui.SelectField
 import java.util.*
 
 
 @Composable
 fun SettingsScreen() {
-    val themes = listOf("Dark", "Light", "System")
+    val resources = LocalContext.current.resources
+
+    val themes = listOf(
+        resources.getString(R.string.theme_dark),
+        resources.getString(R.string.theme_light),
+        resources.getString(R.string.theme_system),
+    )
     val languages = listOf("Russian", "English")
 
 
@@ -38,6 +45,11 @@ fun SettingsScreen() {
             LocalContext.current.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
 
         selectedTheme = sharedPreferences.getString("theme", "System").toString()
+        selectedTheme = when (selectedTheme) {
+            "Dark" -> themes[0]
+            "Light" -> themes[1]
+            else -> themes[2]
+        }
 
         val configuration: Configuration = LocalContext.current.resources.configuration
 
@@ -57,7 +69,7 @@ fun SettingsScreen() {
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
     ) {
         SelectField(
-            label = "Theme",
+            label = resources.getString(R.string.label_theme),
             options = themes,
             onChange = {
                 selectedTheme = it
@@ -68,7 +80,7 @@ fun SettingsScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         SelectField(
-            label = "Language",
+            label = resources.getString(R.string.label_language),
             options = languages,
             onChange = {
                 selectedLanguage = it
@@ -84,7 +96,13 @@ fun SettingsScreen() {
             val sharedPreferences: SharedPreferences =
                 context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
 
-            sharedPreferences.edit().putString("theme", selectedTheme).apply()
+            val themeId = when (selectedTheme) {
+                themes[0] -> "Dark"
+                themes[1] -> "Light"
+                else -> "System"
+            }
+
+            sharedPreferences.edit().putString("theme", themeId).apply()
 
             when (selectedLanguage) {
                 "Russian" -> updateResources(context, "ru")
@@ -92,17 +110,13 @@ fun SettingsScreen() {
                 else -> updateResources(context, "en")
             }
         }) {
-            Text(text = "Save")
+            Text(text = resources.getString(R.string.action_save))
         }
     }
 }
 
 
-private fun updateResources(context: Context, language: String): Context? {
-    val locale = Locale(language)
-    Locale.setDefault(locale)
-    val configuration: Configuration = context.resources.configuration
-    configuration.setLocale(locale)
-    configuration.setLayoutDirection(locale)
-    return context.createConfigurationContext(configuration)
+private fun updateResources(context: Context, language: String) {
+    val sharedPreferences = context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+    sharedPreferences.edit().putString("language", language).apply()
 }

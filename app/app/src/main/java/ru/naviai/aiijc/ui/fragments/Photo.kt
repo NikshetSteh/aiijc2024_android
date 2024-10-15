@@ -118,7 +118,7 @@ fun PhotoBottom(
             )
         }
     ) {
-        Text(text = "Take photo")
+        Text(text = LocalContext.current.resources.getString(R.string.action_photo))
     }
     IconButton(onClick = onFlashLight) {
         Icon(
