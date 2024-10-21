@@ -32,7 +32,9 @@
         <activity
             android:name="ru.naviai.aiijc.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.aiijc2024">
+            android:theme="@style/Theme.aiijc2024"
+            android:screenOrientation="fullSensor"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

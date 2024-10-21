@@ -7,7 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,7 +28,9 @@ import java.util.*
 
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    onExit: () -> Unit
+) {
     val resources = LocalContext.current.resources
 
     val themes = listOf(
@@ -64,53 +71,61 @@ fun SettingsScreen() {
         loadedPrevious = true
     }
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-    ) {
-        SelectField(
-            label = resources.getString(R.string.label_theme),
-            options = themes,
-            onChange = {
-                selectedTheme = it
-            },
-            value = selectedTheme
-        )
+    Column {
+        IconButton(onClick = onExit) {
+            Icon(Icons.Outlined.ArrowBack, "back")
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+        ) {
+            SelectField(
+                label = resources.getString(R.string.label_theme),
+                options = themes,
+                onChange = {
+                    selectedTheme = it
+                },
+                value = selectedTheme
+            )
 
-        SelectField(
-            label = resources.getString(R.string.label_language),
-            options = languages,
-            onChange = {
-                selectedLanguage = it
-            },
-            value = selectedLanguage
-        )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        val context = LocalContext.current
+            SelectField(
+                label = resources.getString(R.string.label_language),
+                options = languages,
+                onChange = {
+                    selectedLanguage = it
+                },
+                value = selectedLanguage
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            val context = LocalContext.current
 
-        Button(onClick = {
-            val sharedPreferences: SharedPreferences =
-                context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+            Spacer(modifier = Modifier.height(16.dp))
 
-            val themeId = when (selectedTheme) {
-                themes[0] -> "Dark"
-                themes[1] -> "Light"
-                else -> "System"
+            Button(onClick = {
+                val sharedPreferences: SharedPreferences =
+                    context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+
+                val themeId = when (selectedTheme) {
+                    themes[0] -> "Dark"
+                    themes[1] -> "Light"
+                    else -> "System"
+                }
+
+                sharedPreferences.edit().putString("theme", themeId).apply()
+
+                when (selectedLanguage) {
+                    "Russian" -> updateResources(context, "ru")
+                    "English" -> updateResources(context, "en")
+                    else -> updateResources(context, "en")
+                }
+            }) {
+                Text(text = resources.getString(R.string.action_save))
             }
-
-            sharedPreferences.edit().putString("theme", themeId).apply()
-
-            when (selectedLanguage) {
-                "Russian" -> updateResources(context, "ru")
-                "English" -> updateResources(context, "en")
-                else -> updateResources(context, "en")
-            }
-        }) {
-            Text(text = resources.getString(R.string.action_save))
         }
     }
 }
