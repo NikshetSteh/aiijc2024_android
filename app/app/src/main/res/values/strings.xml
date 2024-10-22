@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Aiijc2024</string>
+    <string name="app_name" translatable="false">Pipeanalyser</string>
     <string name="action_photo">Take photo</string>
     <string name="label_type">Type</string>
     <string name="type_circle">Circle</string>
