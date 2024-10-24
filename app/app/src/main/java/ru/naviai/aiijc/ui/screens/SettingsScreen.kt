@@ -3,6 +3,7 @@ package ru.naviai.aiijc.ui.screens
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -123,6 +124,8 @@ fun SettingsScreen(
                     "English" -> updateResources(context, "en")
                     else -> updateResources(context, "en")
                 }
+
+                Toast.makeText(context, resources.getString(R.string.toast_saved), Toast.LENGTH_LONG).show()
             }) {
                 Text(text = resources.getString(R.string.action_save))
             }

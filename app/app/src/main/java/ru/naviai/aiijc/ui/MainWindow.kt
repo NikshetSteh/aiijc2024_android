@@ -30,8 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -42,11 +40,13 @@ import ru.naviai.aiijc.ui.screens.MainScreen
 import ru.naviai.aiijc.ui.screens.SettingsScreen
 
 enum class State {
-    Main, Settings, Guide, About
+    Main, Settings, About
 }
 
 @Composable
-fun MainWindow() {
+fun MainWindow(
+    usingLight: Boolean
+) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -72,7 +72,7 @@ fun MainWindow() {
 
                 Row {
                     Image(
-                        painterResource(id = R.drawable.main_icon),
+                        if (usingLight) painterResource(id = R.drawable.main_icon_light) else painterResource(id = R.drawable.main_icon),
                         contentDescription = "AppIcon",
                         modifier = Modifier
                             .height(128.dp)
@@ -137,25 +137,6 @@ fun MainWindow() {
                     label = {
                         Row {
                             Icon(
-                                painterResource(id = R.drawable.help),
-                                contentDescription = "FAQ"
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(resources.getString(R.string.label_guide))
-                        }
-                    },
-                    selected = false,
-                    onClick = {
-                        state = State.Guide
-                        scope.launch {
-                            drawerState.close()
-                        }
-                    }
-                )
-                NavigationDrawerItem(
-                    label = {
-                        Row {
-                            Icon(
                                 imageVector = Icons.Outlined.Info,
                                 contentDescription = "Info"
                             )
@@ -180,12 +161,9 @@ fun MainWindow() {
             State.Settings -> SettingsScreen {
                 state = State.Main
             }
-//            State.Guide -> GuideScreen()
             State.About -> AboutScreen {
                 state = State.Main
             }
-
-            else -> {}
         }
     }
 }

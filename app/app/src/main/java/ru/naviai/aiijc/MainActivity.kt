@@ -35,12 +35,14 @@ class MainActivity : ComponentActivity() {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         setContent {
+            val darkTheme = when {
+                sharedPreferences.getString("theme", "system") == "Dark" -> true
+                sharedPreferences.getString("theme", "system") == "Light" -> false
+                else -> isSystemInDarkTheme()
+            }
+
             Aiijc2024Theme(
-                darkTheme = when {
-                    sharedPreferences.getString("theme", "system") == "Dark" -> true
-                    sharedPreferences.getString("theme", "system") == "Light" -> false
-                    else -> isSystemInDarkTheme()
-                }
+                darkTheme = darkTheme
             ) {
                 val viewModel = viewModel<PermissionViewModel>()
                 val dialogQueue = viewModel.visiblePermissionDialogQueue
@@ -86,7 +88,7 @@ class MainActivity : ComponentActivity() {
 
 
                 Surface {
-                    MainWindow()
+                    MainWindow(darkTheme)
                 }
             }
         }

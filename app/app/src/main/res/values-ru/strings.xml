@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="action_photo">Сканировать</string>
     <string name="label_type">Тип</string>
     <string name="type_circle">Круглый</string>
@@ -17,6 +16,7 @@
     <string name="label_about">О приложении</string>
     <string name="action_reload">Обновить</string>
     <string name="action_new_image">Заново</string>
-    <string name="type_rectangle">Пряморугольный</string>
+    <string name="type_rectangle">Прямоугольный</string>
     <string name="type_quad">Квадратный</string>
+    <string name="toast_saved">"Изменения вступят в силу после перезапуска"</string>
 </resources>

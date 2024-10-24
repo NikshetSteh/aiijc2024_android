@@ -18,4 +18,5 @@
     <string name="action_new_image">New Image</string>
     <string name="type_rectangle">Rectangle</string>
     <string name="type_quad">Quad</string>
+    <string name="toast_saved">The changes will take effect after the restart</string>
 </resources>
