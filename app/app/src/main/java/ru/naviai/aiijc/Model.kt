@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.Log
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
@@ -47,9 +48,10 @@ class Model(context: Context) {
 
 
     private val model: Module
+    private val roundModel: Module
 
     init {
-//        model = Module.load(assetFilePath(context, "uv.ptl"))
+        roundModel = Module.load(assetFilePath(context, "uv.ptl"))
         model = Module.load(assetFilePath(context, "b.torchscript"))
     }
 
@@ -65,8 +67,12 @@ class Model(context: Context) {
         )
 
         val inputValues = IValue.from(imageTensor)
-        val output = model.forward(inputValues)
-        val outputTensor = output.toTensor()
+        val output: IValue = if (type.size == 1 && type[0] == 0) {
+            roundModel.forward(inputValues)
+        } else {
+            model.forward(inputValues)
+        }
+        val outputTensor = if(type.size == 1 && type[0] == 0) output.toTuple()[0].toTensor() else output.toTensor()
 
         return postprocessOutput(
             outputTensor,
@@ -166,13 +172,16 @@ private fun processModelOutput(
     iouThres: Float,
     ids: List<Int>
 ): List<List<Float>> {
+
+    Log.i("kilo", "processModelOutput")
+
     val result = ArrayList<ArrayList<Float>>()
     val boxes = ArrayList<FloatArray>()
     val scores = ArrayList<Float>()
 
     val values = tensor.dataAsFloatArray
 
-    val paddings = 7
+    val paddings = if (ids.size > 1 || ids[0] != 0) 7 else 6
     val size = values.size / paddings
 
     var counter = 0
@@ -181,14 +190,30 @@ private fun processModelOutput(
         counter += 1
 
         var resultClass = ids[0]
-        for (j in ids) {
-            resultClass =
-                if (values[i + (4 + j) * size] > values[i + (4 + resultClass) * size]) j else resultClass
+        if (ids.size > 1) {
+            for (j in ids) {
+                resultClass =
+                    if (values[i + (4 + j) * size] > values[i + (4 + resultClass) * size]) j else resultClass
+            }
         }
 
-        if (values[i + (4 + resultClass) * size] < confThres) continue
+        val conf: Float = if (ids.size == 1 && ids[0] == 0) {
+            values[i * 6 + 5] * values[i * 6 + 4]
+        }else {
+            values[i + (4 + resultClass) * size]
+        }
+
+        if (conf < confThres) continue
 
         val box = xywh2xyxy(
+            if (ids.size == 1 && ids[0] == 0)
+                listOf(
+                    values[i * 6],
+                    values[i * 6 + 1],
+                    values[i * 6 + 2],
+                    values[i * 6 + 3],
+                )
+                else
             listOf(
                 values[i],
                 values[i + 1 * size],
@@ -197,13 +222,13 @@ private fun processModelOutput(
             )
         )
 
-        val conf = values[i + (4 + resultClass) * size]
-
         boxes.add(box)
         scores.add(conf)
 
         result.add(ArrayList(listOf(box[0], box[1], box[2], box[3], conf, 0f)))
     }
+
+    Log.i("kilo", "Box count: $counter")
 
     return nmsBoxes(result, scores, iouThres)
 }

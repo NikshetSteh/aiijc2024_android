@@ -38,8 +38,14 @@ fun Crop(
 @Composable
 fun CropBottom(
     imageCrop: ImageCrop?,
-    onCrop: (Bitmap) -> Unit
+    onCrop: (Bitmap) -> Unit,
+    onEdit: () -> Unit
 ) {
+//    Button(
+//        onClick = onEdit
+//    ) {
+//        Text("Filters")
+//    }
     Button(
         onClick = {
             imageCrop?.onCrop()?.let { onCrop(it) }
