@@ -19,4 +19,11 @@
     <string name="type_rectangle">Rectangle</string>
     <string name="type_quad">Quad</string>
     <string name="toast_saved">The changes will take effect after the restart</string>
+    <string name="title_sharpness">Sharpness:</string>
+    <string name="title_saturation">Saturation:</string>
+    <string name="title_brightness">Brightness:</string>
+    <string name="action_back">Back</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_filters">Filters</string>
 </resources>

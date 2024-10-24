@@ -19,4 +19,11 @@
     <string name="type_rectangle">Прямоугольный</string>
     <string name="type_quad">Квадратный</string>
     <string name="toast_saved">"Изменения вступят в силу после перезапуска"</string>
+    <string name="title_sharpness">Резкость:</string>
+    <string name="title_saturation">Насыщенность:</string>
+    <string name="title_brightness">Яркость:</string>
+    <string name="action_back">Назад</string>
+    <string name="action_apply">Применить</string>
+    <string name="action_reset">Сбросить</string>
+    <string name="action_filters">Фильтры</string>
 </resources>

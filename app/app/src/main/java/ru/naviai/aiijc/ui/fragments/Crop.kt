@@ -1,6 +1,7 @@
 package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
@@ -41,11 +42,14 @@ fun CropBottom(
     onCrop: (Bitmap) -> Unit,
     onEdit: () -> Unit
 ) {
-//    Button(
-//        onClick = onEdit
-//    ) {
-//        Text("Filters")
-//    }
+    Button(
+        onClick = onEdit
+    ) {
+        Text(LocalContext.current.resources.getString(R.string.action_filters))
+    }
+    
+    Spacer(modifier = Modifier.width(16.dp))
+    
     Button(
         onClick = {
             imageCrop?.onCrop()?.let { onCrop(it) }
