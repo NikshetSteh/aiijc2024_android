@@ -77,6 +77,23 @@ fun MainScreen(
             onResult = {
                 isLoading = false
                 prediction = it
+            },
+            when (type) {
+                resources.getString(R.string.type_circle) -> {
+                    Model.PredictionsType.CIRCLE
+                }
+
+                resources.getString(R.string.type_rectangle) -> {
+                    Model.PredictionsType.RECTANGLE
+                }
+
+                resources.getString(R.string.type_quad) -> {
+                    Model.PredictionsType.QUAD
+                }
+
+                else -> {
+                    Model.PredictionsType.CIRCLE
+                }
             }
         )
     }
@@ -173,7 +190,9 @@ fun MainScreen(
         {
             SelectField(
                 options = listOf(
-                    resources.getString(R.string.type_circle)
+                    resources.getString(R.string.type_circle),
+                    resources.getString(R.string.type_rectangle),
+                    resources.getString(R.string.type_quad),
                 ),
                 label = resources.getString(R.string.label_type),
                 value = type,
@@ -188,10 +207,30 @@ fun MainScreen(
     }
 }
 
-fun makePrediction(model: Model, bitmap: Bitmap, onResult: (ModelResults) -> Unit) {
+fun makePrediction(
+    model: Model,
+    bitmap: Bitmap,
+    onResult: (ModelResults) -> Unit,
+    type: Model.PredictionsType
+) {
     CoroutineScope(Dispatchers.Main).launch {
         val result = withContext(Dispatchers.IO) {
-            model.predict(bitmap)
+            model.predict(
+                bitmap,
+                when (type) {
+                    Model.PredictionsType.CIRCLE -> {
+                        listOf(0)
+                    }
+
+                    Model.PredictionsType.QUAD -> {
+                        listOf(1)
+                    }
+
+                    Model.PredictionsType.RECTANGLE -> {
+                        listOf(2)
+                    }
+                }
+            )
         }
         onResult(result)
     }

@@ -13,7 +13,9 @@
     <string name="theme_system">System</string>
     <string name="label_language">Language</string>
     <string name="action_save">Save</string>
-    <string name="action_continue">Edit</string>
+    <string name="action_continue">Continue</string>
     <string name="action_reload">Reload</string>
     <string name="action_new_image">New Image</string>
+    <string name="type_rectangle">Rectangle</string>
+    <string name="type_quad">Quad</string>
 </resources>

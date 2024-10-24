@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
-import android.util.Log
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
@@ -40,14 +39,23 @@ class ModelResults(
 )
 
 class Model(context: Context) {
+    enum class PredictionsType {
+        CIRCLE,
+        RECTANGLE,
+        QUAD
+    }
+
+
     private val model: Module
 
     init {
-        model = Module.load(assetFilePath(context, "uv.ptl"))
+//        model = Module.load(assetFilePath(context, "uv.ptl"))
+        model = Module.load(assetFilePath(context, "b.torchscript"))
     }
 
     fun predict(
-        bitmap: Bitmap
+        bitmap: Bitmap,
+        type: List<Int>
     ): ModelResults {
 
         val imageTensor = TensorImageUtils.bitmapToFloat32Tensor(
@@ -58,11 +66,12 @@ class Model(context: Context) {
 
         val inputValues = IValue.from(imageTensor)
         val output = model.forward(inputValues)
-        val outputTensor = output.toTuple()[0].toTensor()
+        val outputTensor = output.toTensor()
 
         return postprocessOutput(
             outputTensor,
-            bitmap
+            bitmap,
+            type
         )
     }
 }
@@ -88,13 +97,13 @@ private fun drawRectangleOnBitmap(bitmap: Bitmap, data: List<List<Float>>): Bitm
 }
 
 
-private fun postprocessOutput(tensor: Tensor, bitmap: Bitmap): ModelResults {
-    val objects = processModelOutput(tensor, 0.6f, 0.4f)
+private fun postprocessOutput(tensor: Tensor, bitmap: Bitmap, type: List<Int>): ModelResults {
+    val objects = processModelOutput(tensor, 0.6f, 0.4f, type)
 
     return ModelResults(objects.size, drawRectangleOnBitmap(bitmap, objects))
 }
 
-fun xywh2xyxy(x: FloatArray): FloatArray {
+fun xywh2xyxy(x: List<Float>): FloatArray {
     val y = FloatArray(4)
 
     y[0] = x[0] - x[2] / 2
@@ -155,6 +164,7 @@ private fun processModelOutput(
     tensor: Tensor,
     confThres: Float,
     iouThres: Float,
+    ids: List<Int>
 ): List<List<Float>> {
     val result = ArrayList<ArrayList<Float>>()
     val boxes = ArrayList<FloatArray>()
@@ -162,14 +172,32 @@ private fun processModelOutput(
 
     val values = tensor.dataAsFloatArray
 
+    val paddings = 7
+    val size = values.size / paddings
 
-    for (i in 0..<(values.size / 6)) {
-        if (values[i * 6 + 4] < confThres) continue
+    var counter = 0
 
-        values[i * 6 + 5] *= values[i * 6 + 4]
-        val box = xywh2xyxy(values.copyOfRange(i * 6, i * 6 + 4))
+    for (i in 0..<(size)) {
+        counter += 1
 
-        val conf = values[i * 6 + 5]
+        var resultClass = ids[0]
+        for (j in ids) {
+            resultClass =
+                if (values[i + (4 + j) * size] > values[i + (4 + resultClass) * size]) j else resultClass
+        }
+
+        if (values[i + (4 + resultClass) * size] < confThres) continue
+
+        val box = xywh2xyxy(
+            listOf(
+                values[i],
+                values[i + 1 * size],
+                values[i + 2 * size],
+                values[i + 3 * size],
+            )
+        )
+
+        val conf = values[i + (4 + resultClass) * size]
 
         boxes.add(box)
         scores.add(conf)
@@ -177,13 +205,5 @@ private fun processModelOutput(
         result.add(ArrayList(listOf(box[0], box[1], box[2], box[3], conf, 0f)))
     }
 
-    val buffer =  nmsBoxes(result, scores, iouThres)
-
-    Log.i("kilo", "boxes: ${buffer.size}")
-
-    for (box in buffer ) {
-        Log.i("kilo", "box: ${box[0]} ${box[1]} ${box[2]} ${box[3]}")
-    }
-
-    return buffer
+    return nmsBoxes(result, scores, iouThres)
 }

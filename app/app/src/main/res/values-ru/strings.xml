@@ -17,4 +17,6 @@
     <string name="label_about">О приложении</string>
     <string name="action_reload">Обновить</string>
     <string name="action_new_image">Заново</string>
+    <string name="type_rectangle">Пряморугольный</string>
+    <string name="type_quad">Квадратный</string>
 </resources>
