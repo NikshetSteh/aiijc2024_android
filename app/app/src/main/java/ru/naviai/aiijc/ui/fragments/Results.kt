@@ -14,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import ru.NaviAI.aiijc.R
 
 @Composable
 fun Results(
@@ -50,11 +52,13 @@ fun ResultsBottom(
     isLoading: Boolean,
     count: Int?
 ) {
+    val resources = LocalContext.current.resources
+
     Button(
         onClick = onReload,
         enabled = !isLoading
     ) {
-        Text("Reload")
+        Text(resources.getString(R.string.action_reload))
     }
 
     Box(modifier = Modifier.padding(14.dp)) {
@@ -72,6 +76,6 @@ fun ResultsBottom(
         onClick = onNewImage,
         enabled = !isLoading
     ) {
-        Text("New image")
+        Text(resources.getString(R.string.action_new_image))
     }
 }

@@ -51,7 +51,7 @@ fun Aiijc2024Theme(
         }
 
         darkTheme -> DarkColorScheme
-        else -> DarkColorScheme
+        else -> LightColorScheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {

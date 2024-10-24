@@ -2,17 +2,18 @@ package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.image.cropview.CropType
 import com.image.cropview.EdgeType
 import com.image.cropview.ImageCrop
+import ru.NaviAI.aiijc.R
 
 @Composable
 fun Crop(
@@ -37,13 +38,19 @@ fun Crop(
 @Composable
 fun CropBottom(
     imageCrop: ImageCrop?,
-    onCrop: (Bitmap) -> Unit
+    onCrop: (Bitmap) -> Unit,
+    onEdit: () -> Unit
 ) {
+//    Button(
+//        onClick = onEdit
+//    ) {
+//        Text("Filters")
+//    }
     Button(
         onClick = {
             imageCrop?.onCrop()?.let { onCrop(it) }
         }
     ) {
-        Text("Далее")
+        Text(LocalContext.current.resources.getString(R.string.action_continue))
     }
 }

@@ -86,7 +86,7 @@ fun SelectField(
             },
             maxLines = 1
         )
-        if (menuExpanded) {
+        if (menuExpanded && !disabled) {
             val customModifier = if (options.size > 5) {
                 Modifier.height(235.dp)
             } else {
