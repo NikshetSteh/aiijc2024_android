@@ -1,7 +1,9 @@
 package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,21 +24,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.ui.platform.LocalDensity
-import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ModelResults
+import ru.naviai.aiijc.makePrediction
 import ru.naviai.aiijc.ui.EditRectangle
 import java.io.File
 import java.io.FileOutputStream
@@ -41,7 +46,9 @@ import kotlin.math.roundToInt
 @Composable
 fun Results(
     bitmap: Bitmap,
-    imageRect: ImageRect
+    imageRect: ImageRect,
+    type: String,
+    onBack: () -> Unit
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
     var prediction by remember {
@@ -54,13 +61,29 @@ fun Results(
     var isLoading by remember { mutableStateOf(true) }
 
     if (needPrediction) {
-        val cropped = Bitmap.createBitmap(
-            bitmap,
-            (bitmap.width - imageRect.imageSize.x) / 2,
-            (bitmap.height.toFloat() * 3 / 8 - imageRect.imageSize.y / 2).roundToInt(),
-            imageRect.imageSize.x,
-            imageRect.imageSize.y
-        )
+        Log.i("kilo", "Bitmap sizes: ${bitmap.width} ${bitmap.height}")
+        Log.i("kilo", "Rect sizes: ${imageRect.imageSize.x} ${imageRect.imageSize.y}")
+        Log.i("kilo", "Rect offsets: ${imageRect.imageOffset.x} ${imageRect.imageOffset.y}")
+
+        val cropped: Bitmap
+        if (imageRect.contentOffset == null) {
+            cropped = Bitmap.createBitmap(
+                bitmap,
+                (bitmap.width - imageRect.imageSize.x) / 2,
+                (bitmap.height.toFloat() * 3 / 8 - imageRect.imageSize.y / 2).roundToInt(),
+                imageRect.imageSize.x,
+                imageRect.imageSize.y
+            )
+        } else {
+            Log.i("kilo", "Content offsets: ${imageRect.contentOffset.x} ${imageRect.contentOffset.y}")
+            cropped = Bitmap.createBitmap(
+                bitmap,
+                imageRect.contentOffset.x,
+                imageRect.contentOffset.y,
+                imageRect.imageSize.x,
+                imageRect.imageSize.y
+            )
+        }
 
         val buffer = Bitmap.createScaledBitmap(cropped, 640, 640, true)
         val file = File(context.cacheDir, "image.jpg")
@@ -73,17 +96,32 @@ fun Results(
         makePrediction(
             model,
             buffer,
-            imageRect,
             onResult = {
                 isLoading = false
                 prediction = it
             },
-            Model.PredictionsType.CIRCLE
+            when (type) {
+                stringResource(R.string.type_circle) -> {
+                    Model.PredictionsType.CIRCLE
+                }
+
+                stringResource(R.string.type_rectangle) -> {
+                    Model.PredictionsType.RECTANGLE
+                }
+
+                stringResource(R.string.type_quad) -> {
+                    Model.PredictionsType.QUAD
+                }
+
+                else -> {
+                    Model.PredictionsType.CIRCLE
+                }
+            }
         )
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().background(Color.Black),
         contentAlignment = Alignment.TopCenter
     ) {
         Image(
@@ -110,12 +148,6 @@ fun Results(
                     .width(imageRect.imageSize.y.toDp()),
                 contentAlignment = Alignment.Center
             ) {
-                EditRectangle(
-                    imageRect.imageSize.y.toFloat(),
-                    imageRect.imageSize.y.toFloat(),
-                    imageRect.imageSize.x.toFloat(),
-                    imageRect.imageSize.x.toFloat(),
-                )
                 if (prediction != null) {
                     val restoredImage = Bitmap.createScaledBitmap(
                         prediction!!.bitmap,
@@ -124,11 +156,17 @@ fun Results(
                         true
                     )
                     Image(
-                        bitmap =restoredImage.asImageBitmap(),
+                        bitmap = restoredImage.asImageBitmap(),
                         contentDescription = null,
                         contentScale = ContentScale.None
                     )
                 }
+                EditRectangle(
+                    imageRect.imageSize.y.toFloat(),
+                    imageRect.imageSize.y.toFloat(),
+                    imageRect.imageSize.x.toFloat(),
+                    imageRect.imageSize.x.toFloat(),
+                )
             }
         }
 
@@ -141,46 +179,34 @@ fun Results(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if(isLoading) {
+                if (isLoading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.height(128.dp).width(128.dp)
+                        modifier = Modifier
+                            .height(64.dp)
+                            .width(64.dp)
                     )
-                }else {
-                    Text(prediction?.count.toString())
+                } else {
+                    Card(
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(40.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.White,
+                        ),
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(prediction?.count.toString())
+                        }
+                    }
+                }
+
+                Button(onClick = onBack) {
+                    Text(stringResource(R.string.action_back))
                 }
             }
         }
     }
 }
-
-
-fun makePrediction(
-    model: Model,
-    bitmap: Bitmap,
-    imageRect: ImageRect,
-    onResult: (ModelResults) -> Unit,
-    type: Model.PredictionsType
-) {
-    CoroutineScope(Dispatchers.Main).launch {
-        val result = withContext(Dispatchers.IO) {
-            model.predict(
-                bitmap,
-                when (type) {
-                    Model.PredictionsType.CIRCLE -> {
-                        listOf(0)
-                    }
-
-                    Model.PredictionsType.QUAD -> {
-                        listOf(1)
-                    }
-
-                    Model.PredictionsType.RECTANGLE -> {
-                        listOf(2)
-                    }
-                }
-            )
-        }
-        onResult(result)
-    }
-}
-

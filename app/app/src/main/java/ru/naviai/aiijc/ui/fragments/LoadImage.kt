@@ -2,12 +2,18 @@ package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.Icon
@@ -17,24 +23,36 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import ru.NaviAI.aiijc.R
+import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.ui.EditRectangle
+import ru.naviai.aiijc.ui.SelectField
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 @Composable
 fun LoadImage(
-    image: Bitmap
+    image: Bitmap,
+    onReady: (Bitmap, ImageRect, String) -> Unit
 ) {
+    val startType = stringResource(R.string.type_circle)
+    var type by remember { mutableStateOf(startType) }
+    var size = Offset.Zero
+
     with(LocalDensity.current) {
         val screenHeight = LocalConfiguration.current.screenHeightDp
         val screenWidth = LocalConfiguration.current.screenWidthDp
@@ -58,8 +76,10 @@ fun LoadImage(
         }
 
         Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = androidx.compose.ui.Alignment.TopCenter
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.TopCenter,
         ) {
             Image(
                 image.asImageBitmap(),
@@ -94,7 +114,7 @@ fun LoadImage(
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+                horizontalArrangement = Arrangement.End
             ) {
                 IconButton(onClick = { /*TODO*/ }) {
                     Icon(Icons.Filled.ExitToApp, contentDescription = null)
@@ -104,13 +124,13 @@ fun LoadImage(
 
         Box(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+            contentAlignment = Alignment.Center
         ) {
             Box(
                 modifier = Modifier.offset(y = (-screenHeight * (1f / 8)).dp),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                contentAlignment = Alignment.Center
             ) {
-                EditRectangle(
+                size = EditRectangle(
                     minHeight = 90.dp.toPx(),
                     maxHeight = min(
                         min(
@@ -122,6 +142,56 @@ fun LoadImage(
                     minWidth = 90.dp.toPx(),
                     maxWidth = abs(imageWidth - abs(2 * offset.x))
                 )
+            }
+
+            Column(
+                modifier = Modifier.fillMaxHeight(),
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Column(
+                    modifier = Modifier.height((screenHeight / 3).dp),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    SelectField(
+                        modifier = Modifier.width(200.dp),
+                        label = stringResource(R.string.label_type),
+                        options = listOf(
+                            stringResource(R.string.type_circle),
+                            stringResource(R.string.type_rectangle),
+                            stringResource(R.string.type_quad),
+                        ),
+                        onChange = {
+                            type = it
+                        },
+                        value = type
+                    )
+
+                    Row(
+                        modifier = Modifier.width((screenWidth / 2).dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        IconButton(onClick = {
+                            onReady(
+                                image,
+                                ImageRect(
+                                    IntOffset(offset.x.roundToInt(), offset.y.roundToInt()),
+                                    IntOffset(size.x.roundToInt(), size.y.roundToInt()),
+                                    IntOffset(
+                                        ((imageWidth - size.x) / 2 - offset.x).roundToInt(),
+                                        (3f * screenHeight.dp.toPx() / 8 - size.y / 2f - offset.y).roundToInt()
+                                    )
+                                ),
+                                type
+                            )
+                        }) {
+                            Image(
+                                painter = painterResource(R.drawable.ellipse),
+                                contentDescription = null,
+                            )
+                        }
+                    }
+                }
             }
         }
     }

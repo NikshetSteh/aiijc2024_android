@@ -9,11 +9,16 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.compose.ui.unit.IntOffset
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 class ImageRect(
     val imageOffset: IntOffset,
-    val imageSize: IntOffset
+    val imageSize: IntOffset,
+    val contentOffset: IntOffset? = null
 )
 
 
@@ -47,3 +52,35 @@ fun takePhoto(imageCapture: ImageCapture, context: Context, onCapture: (Bitmap) 
         }
     )
 }
+
+
+
+fun makePrediction(
+    model: Model,
+    bitmap: Bitmap,
+    onResult: (ModelResults) -> Unit,
+    type: Model.PredictionsType
+) {
+    CoroutineScope(Dispatchers.Main).launch {
+        val result = withContext(Dispatchers.IO) {
+            model.predict(
+                bitmap,
+                when (type) {
+                    Model.PredictionsType.CIRCLE -> {
+                        listOf(0)
+                    }
+
+                    Model.PredictionsType.QUAD -> {
+                        listOf(1)
+                    }
+
+                    Model.PredictionsType.RECTANGLE -> {
+                        listOf(2)
+                    }
+                }
+            )
+        }
+        onResult(result)
+    }
+}
+

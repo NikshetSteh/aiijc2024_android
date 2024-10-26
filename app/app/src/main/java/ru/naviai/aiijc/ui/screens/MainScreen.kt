@@ -13,13 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.ImageRect
-import ru.naviai.aiijc.Model
-import ru.naviai.aiijc.ModelResults
 import ru.naviai.aiijc.ui.fragments.LoadImage
 import ru.naviai.aiijc.ui.fragments.Photo
 import ru.naviai.aiijc.ui.fragments.Results
@@ -41,16 +37,9 @@ fun MainScreen(
 
     var imageRect by remember { mutableStateOf(ImageRect(IntOffset.Zero, IntOffset.Zero)) }
 
-    val type by remember {
+    var type by remember {
         mutableStateOf(resources.getString(R.string.type_circle))
     }
-
-    val model = Model(LocalContext.current)
-
-    var isLoading by remember { mutableStateOf(false) }
-    var needPrediction by remember { mutableStateOf(false) }
-
-    var prediction by remember { mutableStateOf<ModelResults?>(null) }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -70,20 +59,27 @@ fun MainScreen(
                         currentBitmap = it
                         initialBitmap = it
                     },
-                    onCapture = { bitmap, rect ->
+                    onCapture = { bitmap, rect, newType ->
                         state = ScreenState.Results
                         currentBitmap = bitmap
                         imageRect = rect
+                        type = newType
                     }
                 )
             }
             ScreenState.LoadImage -> {
                 LoadImage(
-                    currentBitmap!!
+                    currentBitmap!!,
+                    onReady = { bitmap, rect, newType ->
+                        state = ScreenState.Results
+                        currentBitmap = bitmap
+                        imageRect = rect
+                        type = newType
+                    }
                 )
             }
             ScreenState.Results -> {
-                currentBitmap?.let { Results(bitmap = it, imageRect = imageRect) }
+                currentBitmap?.let { Results(it, imageRect, type, onBack = { state = ScreenState.Camera }) }
             }
         }
     }

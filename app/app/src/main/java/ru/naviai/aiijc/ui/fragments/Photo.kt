@@ -30,10 +30,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import ru.NaviAI.aiijc.R
@@ -41,6 +47,7 @@ import ru.naviai.aiijc.CameraPreview
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.takePhoto
 import ru.naviai.aiijc.ui.EditRectangle
+import ru.naviai.aiijc.ui.SelectField
 import kotlin.math.roundToInt
 
 
@@ -48,7 +55,7 @@ import kotlin.math.roundToInt
 fun Photo(
     onMenu: () -> Unit,
     onLoad: (Bitmap) -> Unit = {},
-    onCapture: (Bitmap, ImageRect) -> Unit = { _, _ -> }
+    onCapture: (Bitmap, ImageRect, String) -> Unit = { _, _, _ -> }
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
@@ -56,6 +63,9 @@ fun Photo(
 
     val verticalPaddings = 64
     val horizontalPaddings = 16
+    val startType = stringResource(R.string.type_circle)
+
+    var type by remember { mutableStateOf(startType) }
 
     val height = screenHeight / 4f * 3 - verticalPaddings * 2
     val width = screenWidth - horizontalPaddings * 2
@@ -88,7 +98,7 @@ fun Photo(
 
     var size = Offset(0f, 0f)
 
-    with (LocalDensity.current) {
+    with(LocalDensity.current) {
         sizeX = LocalConfiguration.current.screenWidthDp.dp.toPx()
         sizeY = LocalConfiguration.current.screenHeightDp.dp.toPx()
     }
@@ -107,7 +117,7 @@ fun Photo(
             contentAlignment = androidx.compose.ui.Alignment.TopStart
         ) {
             IconButton(onClick = onMenu) {
-                Icon(Icons.Filled.Menu, contentDescription = null)
+                Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
             }
         }
 
@@ -119,6 +129,7 @@ fun Photo(
                 Icon(
                     Icons.Outlined.Add,
                     contentDescription = null,
+                    tint = Color.White
                 )
                 size = EditRectangle(
                     90.dp.toPx(),
@@ -138,40 +149,20 @@ fun Photo(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
             ) {
-                IconButton(onClick = {
-                    takePhoto(imageCapture, context) {
-                        val imageHeight = it.height.toFloat()
-                        val imageWidth = sizeX * (it.height.toFloat() / sizeY)
+                SelectField(
+                    modifier = Modifier.width(200.dp),
+                    label = stringResource(R.string.label_type),
+                    options = listOf(
+                        stringResource(R.string.type_circle),
+                        stringResource(R.string.type_rectangle),
+                        stringResource(R.string.type_quad),
+                    ),
+                    onChange = {
+                        type = it
+                    },
+                    value = type
+                )
 
-                        val cropped = Bitmap.createBitmap(
-                            it,
-                            ((it.width - imageWidth) / 2).roundToInt(),
-                            0,
-                            imageWidth.roundToInt(),
-                            imageHeight.roundToInt()
-                        )
-
-                        val resized = Bitmap.createScaledBitmap(
-                            cropped,
-                            sizeX.roundToInt(),
-                            sizeY.roundToInt(),
-                            true
-                        )
-
-                        onCapture(
-                            resized,
-                            ImageRect(
-                                IntOffset(0, 0),
-                                IntOffset(size.x.roundToInt(), size.y.roundToInt()),
-                            )
-                        )
-                    }
-                }) {
-                    Image(
-                        painter = painterResource(R.drawable.ellipse),
-                        contentDescription = null,
-                    )
-                }
                 Row(
                     modifier = Modifier.width((screenWidth / 2).dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -181,15 +172,57 @@ fun Photo(
                             launcher.launch("image/*")
                         }
                     }) {
-                        Icon(painterResource(R.drawable.upload), contentDescription = null)
+                        Icon(
+                            ImageVector.vectorResource(R.drawable.upload),
+                            contentDescription = null,
+                            tint = Color.White
+                        )
                     }
+
+                    IconButton(onClick = {
+                        takePhoto(imageCapture, context) {
+                            val imageHeight = it.height.toFloat()
+                            val imageWidth = sizeX * (it.height.toFloat() / sizeY)
+
+                            val cropped = Bitmap.createBitmap(
+                                it,
+                                ((it.width - imageWidth) / 2).roundToInt(),
+                                0,
+                                imageWidth.roundToInt(),
+                                imageHeight.roundToInt()
+                            )
+
+                            val resized = Bitmap.createScaledBitmap(
+                                cropped,
+                                sizeX.roundToInt(),
+                                sizeY.roundToInt(),
+                                true
+                            )
+
+                            onCapture(
+                                resized,
+                                ImageRect(
+                                    IntOffset(0, 0),
+                                    IntOffset(size.x.roundToInt(), size.y.roundToInt()),
+                                ),
+                                type
+                            )
+                        }
+                    }) {
+                        Image(
+                            painter = painterResource(R.drawable.ellipse),
+                            contentDescription = null,
+                        )
+                    }
+
                     IconButton(onClick = { flashLight = !flashLight }) {
                         Icon(
                             if (flashLight)
-                                painterResource(R.drawable.flashlight_on)
+                                ImageVector.vectorResource(R.drawable.flashlight_on)
                             else
-                                painterResource(R.drawable.flashlight_off),
-                            contentDescription = null
+                                ImageVector.vectorResource(R.drawable.flashlight_off),
+                            contentDescription = null,
+                            tint = Color.White,
                         )
                     }
                 }
