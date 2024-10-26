@@ -1,18 +1,13 @@
 package ru.naviai.aiijc.ui.fragments
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.Icon
@@ -35,29 +29,33 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.CameraPreview
-import ru.naviai.aiijc.ui.Rectangle
+import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.takePhoto
+import ru.naviai.aiijc.ui.EditRectangle
+import kotlin.math.roundToInt
 
 
 @Composable
 fun Photo(
     onMenu: () -> Unit,
     onLoad: (Bitmap) -> Unit = {},
-    onCapture: (Bitmap) -> Unit = {}
+    onCapture: (Bitmap, ImageRect) -> Unit = { _, _ -> }
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
     val screenWidth = configuration.screenWidthDp
 
     val verticalPaddings = 64
-    val horizontalPaddings = 32
+    val horizontalPaddings = 16
 
     val height = screenHeight / 4f * 3 - verticalPaddings * 2
     val width = screenWidth - horizontalPaddings * 2
@@ -83,6 +81,16 @@ fun Photo(
         bitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, false)
 
         onLoad(bitmap!!)
+    }
+
+    var sizeX: Float
+    var sizeY: Float
+
+    var size = Offset(0f, 0f)
+
+    with (LocalDensity.current) {
+        sizeX = LocalConfiguration.current.screenWidthDp.dp.toPx()
+        sizeY = LocalConfiguration.current.screenHeightDp.dp.toPx()
     }
 
     Box(
@@ -112,7 +120,7 @@ fun Photo(
                     Icons.Outlined.Add,
                     contentDescription = null,
                 )
-                Rectangle(
+                size = EditRectangle(
                     90.dp.toPx(),
                     height.dp.toPx(),
                     90.dp.toPx(),
@@ -130,13 +138,38 @@ fun Photo(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
             ) {
-                IconButton(onClick = { takePhoto(imageCapture, context, onCapture) }) {
-                    Icon(
-                        Icons.Filled.AddCircle,
-                        modifier = Modifier
-                            .height(256.dp)
-                            .width(256.dp),
-                        contentDescription = null
+                IconButton(onClick = {
+                    takePhoto(imageCapture, context) {
+                        val imageHeight = it.height.toFloat()
+                        val imageWidth = sizeX * (it.height.toFloat() / sizeY)
+
+                        val cropped = Bitmap.createBitmap(
+                            it,
+                            ((it.width - imageWidth) / 2).roundToInt(),
+                            0,
+                            imageWidth.roundToInt(),
+                            imageHeight.roundToInt()
+                        )
+
+                        val resized = Bitmap.createScaledBitmap(
+                            cropped,
+                            sizeX.roundToInt(),
+                            sizeY.roundToInt(),
+                            true
+                        )
+
+                        onCapture(
+                            resized,
+                            ImageRect(
+                                IntOffset(0, 0),
+                                IntOffset(size.x.roundToInt(), size.y.roundToInt()),
+                            )
+                        )
+                    }
+                }) {
+                    Image(
+                        painter = painterResource(R.drawable.ellipse),
+                        contentDescription = null,
                     )
                 }
                 Row(
@@ -165,34 +198,3 @@ fun Photo(
     }
 }
 
-
-fun takePhoto(imageCapture: ImageCapture, context: Context, onCapture: (Bitmap) -> Unit) {
-    imageCapture.takePicture(
-        ContextCompat.getMainExecutor(context),
-        object : ImageCapture.OnImageCapturedCallback() {
-            override fun onCaptureSuccess(image: ImageProxy) {
-                super.onCaptureSuccess(image)
-
-                val matrix = Matrix().apply {
-                    postRotate(image.imageInfo.rotationDegrees.toFloat())
-                }
-                val bitmap = Bitmap.createBitmap(
-                    image.toBitmap(),
-                    0,
-                    0,
-                    image.width,
-                    image.height,
-                    matrix,
-                    true
-                )
-
-                onCapture(bitmap)
-            }
-
-            override fun onError(exception: ImageCaptureException) {
-                super.onError(exception)
-                Log.e("Camera", "Couldn't take photo: ", exception)
-            }
-        }
-    )
-}

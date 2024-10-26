@@ -4,8 +4,14 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,7 +26,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import ru.naviai.aiijc.ui.Rectangle
+import ru.naviai.aiijc.ui.EditRectangle
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -37,15 +43,15 @@ fun LoadImage(
         val imageHeight = image.height / image.width.toFloat() * imageWidth
 
         val zoneHeight = min(
-            (screenHeight / 3f * 2 - 16 * 2).dp.toPx(),
+            (screenHeight * (3f / 8) * 2 - 16 * 2).dp.toPx(),
             imageHeight
         )
 
-        val base = screenHeight.dp.toPx() / 3f - zoneHeight / 2
-        val maxOffsetY = base + zoneHeight / 2f - 30.dp.toPx()
-        val minOffsetY = base - (imageHeight - zoneHeight / 2f) + 30.dp.toPx()
+        val base = screenHeight.dp.toPx() * (3f / 8) - zoneHeight / 2
+        val maxOffsetY = base + zoneHeight / 2f - 45.dp.toPx()
+        val minOffsetY = base - (imageHeight - zoneHeight / 2f) + 45.dp.toPx()
 
-        val maxOffsetX = imageWidth / 2f - 30.dp.toPx()
+        val maxOffsetX = imageWidth / 2f - 45.dp.toPx()
 
         var offset by remember {
             mutableStateOf(Offset(0f, base))
@@ -86,27 +92,34 @@ fun LoadImage(
                         }
                     }
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+            ) {
+                IconButton(onClick = { /*TODO*/ }) {
+                    Icon(Icons.Filled.ExitToApp, contentDescription = null)
+                }
+            }
         }
 
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = androidx.compose.ui.Alignment.Center
         ) {
-
             Box(
-                modifier = Modifier.offset(y = (-screenHeight / 6f).dp),
+                modifier = Modifier.offset(y = (-screenHeight * (1f / 8)).dp),
                 contentAlignment = androidx.compose.ui.Alignment.Center
             ) {
-                Rectangle(
-                    minHeight = 60.dp.toPx(),
+                EditRectangle(
+                    minHeight = 90.dp.toPx(),
                     maxHeight = min(
                         min(
                             zoneHeight,
                             zoneHeight - 2 * (offset.y - base)
                         ),
-                        2 * offset.y + 2 * imageHeight - 2 * screenHeight.dp.toPx() / 3
+                        2 * offset.y + 2 * imageHeight - 2 * screenHeight.dp.toPx() * (3f / 8)
                     ),
-                    minWidth = 60.dp.toPx(),
+                    minWidth = 90.dp.toPx(),
                     maxWidth = abs(imageWidth - abs(2 * offset.x))
                 )
             }

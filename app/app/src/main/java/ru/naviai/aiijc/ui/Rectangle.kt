@@ -20,12 +20,12 @@ import ru.NaviAI.aiijc.R
 import kotlin.math.roundToInt
 
 @Composable
-fun Rectangle(
+fun EditRectangle(
     minHeight: Float,
     maxHeight: Float,
     minWidth: Float,
     maxWidth: Float
-) {
+): Offset {
     with(LocalDensity.current) {
         var size by remember {
             mutableStateOf(
@@ -149,6 +149,7 @@ fun Rectangle(
                 }
             }
         )
+        return size
     }
 }
 
