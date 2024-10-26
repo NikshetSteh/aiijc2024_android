@@ -3,6 +3,7 @@ package ru.naviai.aiijc.ui.screens
 import android.graphics.Bitmap
 import androidx.camera.core.ImageCapture
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -35,13 +36,13 @@ import ru.naviai.aiijc.ui.fragments.Crop
 import ru.naviai.aiijc.ui.fragments.CropBottom
 import ru.naviai.aiijc.ui.fragments.Filters
 import ru.naviai.aiijc.ui.fragments.FiltersParams
-import ru.naviai.aiijc.ui.fragments.PhotoBottom
-import ru.naviai.aiijc.ui.fragments.PhotoTop
+import ru.naviai.aiijc.ui.fragments.LoadImage
+import ru.naviai.aiijc.ui.fragments.Photo
 import ru.naviai.aiijc.ui.fragments.Results
 import ru.naviai.aiijc.ui.fragments.ResultsBottom
 
 enum class ScreenState {
-    Camera, Crop, Result, Filters
+    Camera, LoadImage
 }
 
 @Composable
@@ -105,151 +106,27 @@ fun MainScreen(
         )
     }
 
-    if (state != ScreenState.Filters) {
-        IconButton(onClick = {
-            scope.launch {
-                drawerState.apply {
-                    if (isClosed) open() else close()
-                }
-            }
-        }) {
-            Icon(Icons.Outlined.Menu, contentDescription = "Menu")
-        }
-
-        Column(
-            modifier = Modifier.fillMaxHeight(),
-            verticalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                when (state) {
-                    ScreenState.Camera -> {
-                        imageCapture = PhotoTop(flashlight)
-                    }
-
-                    ScreenState.Crop -> {
-                        imageCrop = Crop(currentBitmap)
-                    }
-
-                    else -> {
-                        Results(
-                            prediction?.bitmap
-                        )
-                    }
-                }
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            {
-                when (state) {
-                    ScreenState.Camera -> {
-                        PhotoBottom(
-                            imageCapture = imageCapture!!,
-                            flashlight,
-                            onCapture = {
-                                currentBitmap = it
-                                initialBitmap = it
-
-                                if (lastFilterParams != null) {
-                                    currentBitmap = adjustBitmap(
-                                        currentBitmap!!,
-                                        lastFilterParams!!.brightness,
-                                        lastFilterParams!!.contrast
-                                    )
-                                }
-
-                                state = ScreenState.Crop
-                            },
-                            onFlashLight = {
-                                flashlight = !flashlight
-                            }
-                        )
-                    }
-
-                    ScreenState.Crop -> {
-                        CropBottom(
-                            imageCrop = imageCrop!!,
-                            onCrop = {
-                                currentBitmap = scaleBitmapWithBlackMargins(it)
-                                state = ScreenState.Result
-                                isLoading = true
-                                needPrediction = true
-                            },
-                            onEdit = {
-                                state = ScreenState.Filters
-                            }
-                        )
-                    }
-
-                    else -> {
-                        ResultsBottom(
-                            onReload = {
-                                isLoading = true
-                                needPrediction = true
-                                prediction = null
-                            },
-                            onNewImage = {
-                                prediction = null
-                                state = ScreenState.Camera
-                            },
-                            isLoading = isLoading,
-                            count = if (prediction != null) prediction?.count else null
-                        )
-                    }
-                }
-            }
-
-
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            {
-                SelectField(
-                    options = listOf(
-                        resources.getString(R.string.type_circle),
-                        resources.getString(R.string.type_rectangle),
-                        resources.getString(R.string.type_quad),
-                    ),
-                    label = resources.getString(R.string.label_type),
-                    value = type,
-                    onChange = {
-                        if (!isLoading) {
-                            type = it
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        if (state == ScreenState.Camera) {
+            Photo(
+                onMenu = {
+                    scope.launch {
+                        drawerState.apply {
+                            if (isClosed) open() else close()
                         }
-                    },
-                    disabled = isLoading
-                )
-            }
-        }
-    } else {
-        Column(modifier = Modifier.fillMaxSize()) {
-            IconButton(onClick = {
-                scope.launch {
-                    drawerState.apply {
-                        if (isClosed) open() else close()
                     }
-                }
-            }) {
-                Icon(Icons.Outlined.Menu, contentDescription = "Menu")
-            }
-
-            Filters(
-                initialBitmap!!,
-                lastFilterParams,
-                ready = { bitmap: Bitmap, filtersParams: FiltersParams ->
-                    currentBitmap = bitmap
-                    lastFilterParams = filtersParams
-                    state = ScreenState.Crop
                 },
-                back = {
-                    state = ScreenState.Crop
+                onLoad = {
+                    state = ScreenState.LoadImage
+                    currentBitmap = it
+                    initialBitmap = it
                 }
+            )
+        }else if (state == ScreenState.LoadImage) {
+            LoadImage(
+                currentBitmap!!
             )
         }
     }
