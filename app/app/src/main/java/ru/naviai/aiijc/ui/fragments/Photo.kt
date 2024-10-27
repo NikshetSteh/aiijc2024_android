@@ -31,12 +31,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -55,7 +53,8 @@ import kotlin.math.roundToInt
 fun Photo(
     onMenu: () -> Unit,
     onLoad: (Bitmap) -> Unit = {},
-    onCapture: (Bitmap, ImageRect, String) -> Unit = { _, _, _ -> }
+    onCapture: (Bitmap, ImageRect, String) -> Unit = { _, _, _ -> },
+    startType: String
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
@@ -63,7 +62,6 @@ fun Photo(
 
     val verticalPaddings = 64
     val horizontalPaddings = 16
-    val startType = stringResource(R.string.type_circle)
 
     var type by remember { mutableStateOf(startType) }
 
@@ -164,7 +162,7 @@ fun Photo(
                 )
 
                 Row(
-                    modifier = Modifier.width((screenWidth / 2).dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     IconButton(onClick = {

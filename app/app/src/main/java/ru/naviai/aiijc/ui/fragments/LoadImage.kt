@@ -47,9 +47,10 @@ import kotlin.math.roundToInt
 @Composable
 fun LoadImage(
     image: Bitmap,
-    onReady: (Bitmap, ImageRect, String) -> Unit
+    onReady: (Bitmap, ImageRect, String) -> Unit,
+    onBack: () -> Unit,
+    startType: String
 ) {
-    val startType = stringResource(R.string.type_circle)
     var type by remember { mutableStateOf(startType) }
     var size = Offset.Zero
 
@@ -116,8 +117,12 @@ fun LoadImage(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(Icons.Filled.ExitToApp, contentDescription = null)
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.Filled.ExitToApp,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
                 }
             }
         }

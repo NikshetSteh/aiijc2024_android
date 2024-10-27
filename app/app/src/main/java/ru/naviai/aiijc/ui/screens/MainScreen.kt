@@ -64,7 +64,8 @@ fun MainScreen(
                         currentBitmap = bitmap
                         imageRect = rect
                         type = newType
-                    }
+                    },
+                    startType = type
                 )
             }
             ScreenState.LoadImage -> {
@@ -75,7 +76,9 @@ fun MainScreen(
                         currentBitmap = bitmap
                         imageRect = rect
                         type = newType
-                    }
+                    },
+                    onBack = { state = ScreenState.Camera },
+                    startType = type
                 )
             }
             ScreenState.Results -> {
