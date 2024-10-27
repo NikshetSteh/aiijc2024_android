@@ -3,9 +3,7 @@ package ru.naviai.aiijc
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
@@ -41,7 +39,6 @@ fun assetFilePath(context: Context, assetName: String?): String? {
 
 class ModelResults(
     val count: Int,
-    val bitmap: Bitmap,
     val items: List<Item>,
     val meanSize: Int
 )
@@ -86,37 +83,15 @@ class Model(context: Context) {
 
         return postprocessOutput(
             outputTensor,
-            bitmap,
             type
         )
     }
 }
 
-private fun drawRectangleOnBitmap(bitmap: Bitmap, data: List<List<Float>>): Bitmap {
-//    val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-//    val canvas = android.graphics.Canvas(mutableBitmap)
-//    val paint = Paint().apply {
-//        color = Color.GREEN
-//        style = Paint.Style.STROKE
-//    }
-//
-//    for (box in data) {
-//        val x1 = box[0]
-//        val y1 = box[1]
-//        val x2 = box[2]
-//        val y2 = box[3]
-//
-//        canvas.drawRect(x1, y1, x2, y2, paint)
-//    }
 
-    return bitmap
-}
-
-
-private fun postprocessOutput(tensor: Tensor, bitmap: Bitmap, type: List<Int>): ModelResults {
+private fun postprocessOutput(tensor: Tensor, type: List<Int>): ModelResults {
     val objects = processModelOutput(tensor, 0.6f, 0.2f, type)
 
-    var counter = 1
     var sizeSum = 0f
 
     val items = objects.map {
@@ -125,8 +100,7 @@ private fun postprocessOutput(tensor: Tensor, bitmap: Bitmap, type: List<Int>): 
             IntOffset(
                 ((it[0] + it[2]) / 2).roundToInt(),
                 ((it[1] + it[3]) / 2).roundToInt()
-            ),
-            counter++
+            )
         )
     }
 
@@ -137,7 +111,6 @@ private fun postprocessOutput(tensor: Tensor, bitmap: Bitmap, type: List<Int>): 
 
     return ModelResults(
         objects.size,
-        drawRectangleOnBitmap(bitmap, objects),
         items,
         if (objects.isNotEmpty()) (sizeSum / objects.size).roundToInt() else 40
     )

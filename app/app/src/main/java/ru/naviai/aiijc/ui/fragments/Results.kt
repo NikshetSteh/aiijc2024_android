@@ -4,19 +4,27 @@ import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +56,11 @@ import java.io.FileOutputStream
 import kotlin.math.roundToInt
 
 
+enum class Mode {
+    NONE, ADD, DELETE
+}
+
+
 @Composable
 fun Results(
     bitmap: Bitmap,
@@ -57,6 +71,7 @@ fun Results(
     lastModel: Model?
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
+    val screenWidth = LocalConfiguration.current.screenWidthDp
     var prediction by remember {
         mutableStateOf<ModelResults?>(null)
     }
@@ -70,6 +85,10 @@ fun Results(
 
     var needPrediction by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(true) }
+
+    var mode by remember {
+        mutableStateOf(Mode.NONE)
+    }
 
     if (needPrediction) {
         Log.i("kilo", "Bitmap sizes: ${bitmap.width} ${bitmap.height}")
@@ -161,34 +180,56 @@ fun Results(
                 modifier = Modifier
                     .offset(y = (-screenHeight / 8).dp)
                     .height(imageRect.imageSize.x.toDp())
-                    .width(imageRect.imageSize.y.toDp()),
+                    .width(screenWidth.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (prediction != null) {
-//                    val restoredImage = Bitmap.createScaledBitmap(
-//                        prediction!!.bitmap,
-//                        imageRect.imageSize.x,
-//                        imageRect.imageSize.y,
-//                        true
-//                    )
-//                    Image(
-//                        bitmap = restoredImage.asImageBitmap(),
-//                        contentDescription = null,
-//                        contentScale = ContentScale.None
-//                    )
-
-                    ResultsItems(
-                        items = prediction!!.items,
-                        imageRect.imageSize,
-                        prediction!!.meanSize.toDp().value
-                    )
-                }
                 EditRectangle(
                     imageRect.imageSize.y.toFloat(),
                     imageRect.imageSize.y.toFloat(),
                     imageRect.imageSize.x.toFloat(),
                     imageRect.imageSize.x.toFloat(),
                 )
+                if (prediction != null) {
+                    ResultsItems(
+                        items = prediction!!.items,
+                        imageRect.imageSize,
+                        prediction!!.meanSize.toDp().value,
+                        actionMode = mode,
+                        onChange = { items ->
+                            prediction = ModelResults(
+                                items.size,
+                                items,
+                                prediction!!.meanSize
+                            )
+                        }
+                    )
+                }
+
+                if (mode == Mode.ADD) {
+                    Box(
+                        modifier = Modifier
+                            .width(imageRect.imageSize.x.toDp())
+                            .height(imageRect.imageSize.y.toDp())
+                            .pointerInput(Unit) {
+                                detectTapGestures { offset ->
+                                    Log.i("kilo", "Offset: ${offset.x} ${offset.y}")
+                                    prediction.let {
+                                        prediction = ModelResults(
+                                            it!!.items.size + 1,
+                                            it.items +
+                                                    Item(
+                                                        IntOffset(
+                                                            (offset.x / imageRect.imageSize.x * 640).roundToInt(),
+                                                            (offset.y / imageRect.imageSize.y * 640).roundToInt(),
+                                                        )
+                                                    ),
+                                            it.meanSize
+                                        )
+                                    }
+                                }
+                            }
+                    )
+                }
             }
         }
 
@@ -208,21 +249,50 @@ fun Results(
                             .width(64.dp)
                     )
                 } else {
-                    Card(
-                        modifier = Modifier
-                            .height(40.dp)
-                            .width(40.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White,
-                        ),
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                    Row {
+                        IconButton(onClick = {
+                            mode = if (mode != Mode.DELETE) {
+                                Mode.DELETE
+                            } else {
+                                Mode.NONE
+                            }
+                        }) {
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription = null,
+                                tint = if (mode == Mode.DELETE) Color.White else Color.Gray
+                            )
+                        }
+                        Card(
+                            modifier = Modifier
+                                .height(40.dp)
+                                .width(40.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White,
+                            ),
                         ) {
-                            Text(
-                                prediction?.count.toString(),
-                                color = Color.Black
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    prediction?.count.toString(),
+                                    color = Color.Black
+                                )
+                            }
+                        }
+
+                        IconButton(onClick = {
+                            mode = if (mode != Mode.ADD) {
+                                Mode.ADD
+                            } else {
+                                Mode.NONE
+                            }
+                        }) {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = null,
+                                tint = if (mode == Mode.ADD) Color.White else Color.Gray
                             )
                         }
                     }
@@ -238,8 +308,7 @@ fun Results(
 
 
 class Item(
-    val offset: IntOffset,
-    val value: Int
+    val offset: IntOffset
 )
 
 
@@ -247,7 +316,8 @@ class Item(
 fun ResultItem(
     title: String,
     fontSize: Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Box(
         modifier,
@@ -256,6 +326,9 @@ fun ResultItem(
         Image(
             painterResource(R.drawable.ellipse_item),
             contentDescription = null,
+            modifier = Modifier.clickable(
+                onClick = onClick
+            )
         )
         Text(
             text = title,
@@ -269,12 +342,16 @@ fun ResultItem(
 fun ResultsItems(
     items: List<Item>,
     imageSize: IntOffset,
-    size: Float
+    size: Float,
+    onChange: (List<Item>) -> Unit,
+    actionMode: Mode = Mode.NONE
 ) {
+    var counter = 1
+
     for (item in items) {
 //        Log.i("kilo", "Item: ${item.value} offset: ${item.offset.x} ${item.offset.y}")
         ResultItem(
-            item.value.toString(),
+            (counter++).toString(),
             modifier = Modifier
                 .offset {
                     IntOffset(
@@ -283,7 +360,12 @@ fun ResultsItems(
                     )
                 }
                 .size(size.dp),
-            fontSize = size
+            fontSize = size,
+            onClick = {
+                if (actionMode == Mode.DELETE) {
+                    onChange(items - item)
+                }
+            }
         )
     }
 }
