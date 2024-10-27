@@ -18,7 +18,8 @@ import kotlinx.coroutines.withContext
 class ImageRect(
     val imageOffset: IntOffset,
     val imageSize: IntOffset,
-    val contentOffset: IntOffset? = null
+    val contentOffset: IntOffset? = null,
+    val contentSize: IntOffset? = null
 )
 
 

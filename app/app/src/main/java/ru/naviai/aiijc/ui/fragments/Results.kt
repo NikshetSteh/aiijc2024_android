@@ -94,8 +94,8 @@ fun Results(
                 bitmap,
                 imageRect.contentOffset.x,
                 imageRect.contentOffset.y,
-                imageRect.imageSize.x,
-                imageRect.imageSize.y
+                imageRect.contentSize?.x ?: imageRect.imageSize.x,
+                imageRect.contentSize?.y ?: imageRect.imageSize.y
             )
         }
 
