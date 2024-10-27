@@ -2,16 +2,21 @@ package ru.naviai.aiijc
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Color
-import android.graphics.Paint
 import android.util.Log
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
 import org.pytorch.torchvision.TensorImageUtils
+import ru.naviai.aiijc.ui.fragments.Item
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import kotlin.math.abs
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 
 @Throws(IOException::class)
@@ -36,7 +41,9 @@ fun assetFilePath(context: Context, assetName: String?): String? {
 
 class ModelResults(
     val count: Int,
-    val bitmap: Bitmap
+    val bitmap: Bitmap,
+    val items: List<Item>,
+    val meanSize: Int
 )
 
 class Model(context: Context) {
@@ -48,11 +55,12 @@ class Model(context: Context) {
 
 
     private val model: Module
-    private val roundModel: Module
+//    private val roundModel: Module
 
     init {
-        roundModel = Module.load(assetFilePath(context, "uv.ptl"))
-        model = Module.load(assetFilePath(context, "b.torchscript"))
+//        roundModel = Module.load(assetFilePath(context, "uv.ptl"))
+//        model = Module.load(assetFilePath(context, "b.torchscript"))
+        model = Module.load(assetFilePath(context, "b2.torchscript"))
     }
 
     fun predict(
@@ -67,12 +75,14 @@ class Model(context: Context) {
         )
 
         val inputValues = IValue.from(imageTensor)
-        val output: IValue = if (type.size == 1 && type[0] == 0) {
-            roundModel.forward(inputValues)
-        } else {
-            model.forward(inputValues)
-        }
-        val outputTensor = if(type.size == 1 && type[0] == 0) output.toTuple()[0].toTensor() else output.toTensor()
+//        val output: IValue = if (type.size == 1 && type[0] == 0) {
+//            roundModel.forward(inputValues)
+//        } else {
+//            model.forward(inputValues)
+//        }
+        val output: IValue = model.forward(inputValues)
+//        val outputTensor = if(type.size == 1 && type[0] == 0) output.toTuple()[0].toTensor() else output.toTensor()
+        val outputTensor = output.toTensor()
 
         return postprocessOutput(
             outputTensor,
@@ -83,30 +93,54 @@ class Model(context: Context) {
 }
 
 private fun drawRectangleOnBitmap(bitmap: Bitmap, data: List<List<Float>>): Bitmap {
-    val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-    val canvas = android.graphics.Canvas(mutableBitmap)
-    val paint = Paint().apply {
-        color = Color.GREEN
-        style = Paint.Style.STROKE
-    }
+//    val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+//    val canvas = android.graphics.Canvas(mutableBitmap)
+//    val paint = Paint().apply {
+//        color = Color.GREEN
+//        style = Paint.Style.STROKE
+//    }
+//
+//    for (box in data) {
+//        val x1 = box[0]
+//        val y1 = box[1]
+//        val x2 = box[2]
+//        val y2 = box[3]
+//
+//        canvas.drawRect(x1, y1, x2, y2, paint)
+//    }
 
-    for (box in data) {
-        val x1 = box[0]
-        val y1 = box[1]
-        val x2 = box[2]
-        val y2 = box[3]
-
-        canvas.drawRect(x1, y1, x2, y2, paint)
-    }
-
-    return mutableBitmap
+    return bitmap
 }
 
 
 private fun postprocessOutput(tensor: Tensor, bitmap: Bitmap, type: List<Int>): ModelResults {
-    val objects = processModelOutput(tensor, 0.6f, 0.4f, type)
+    val objects = processModelOutput(tensor, 0.6f, 0.2f, type)
 
-    return ModelResults(objects.size, drawRectangleOnBitmap(bitmap, objects))
+    var counter = 1
+    var sizeSum = 0f
+
+    val items = objects.map {
+        sizeSum += min(abs(it[2] - it[0]), abs(it[3] - it[1]))
+        Item(
+            IntOffset(
+                ((it[0] + it[2]) / 2).roundToInt(),
+                ((it[1] + it[3]) / 2).roundToInt()
+            ),
+            counter++
+        )
+    }
+
+    Log.i("kilo", "Size sum: $sizeSum")
+    Log.i("kilo", "Items count: ${objects.size}")
+    Log.i("kilo", "Mean: ${sizeSum / objects.size / 2}")
+
+
+    return ModelResults(
+        objects.size,
+        drawRectangleOnBitmap(bitmap, objects),
+        items,
+        if (objects.isNotEmpty()) (sizeSum / objects.size).roundToInt() else 40
+    )
 }
 
 fun xywh2xyxy(x: List<Float>): FloatArray {
@@ -172,7 +206,6 @@ private fun processModelOutput(
     iouThres: Float,
     ids: List<Int>
 ): List<List<Float>> {
-
     Log.i("kilo", "processModelOutput")
 
     val result = ArrayList<ArrayList<Float>>()
@@ -181,7 +214,8 @@ private fun processModelOutput(
 
     val values = tensor.dataAsFloatArray
 
-    val paddings = if (ids.size > 1 || ids[0] != 0) 7 else 6
+//    val paddings = if (ids.size > 1 || ids[0] != 0) 7 else 6
+    val paddings = 7
     val size = values.size / paddings
 
     var counter = 0
@@ -197,23 +231,16 @@ private fun processModelOutput(
             }
         }
 
-        val conf: Float = if (ids.size == 1 && ids[0] == 0) {
-            values[i * 6 + 5] * values[i * 6 + 4]
-        }else {
-            values[i + (4 + resultClass) * size]
-        }
+//        val conf: Float = if (ids.size == 1 && ids[0] == 0) {
+//            values[i * 6 + 5] * values[i * 6 + 4]
+//        }else {
+//            values[i + (4 + resultClass) * size]
+//        }
+        val conf: Float = values[i + (4 + resultClass) * size]
 
         if (conf < confThres) continue
 
         val box = xywh2xyxy(
-            if (ids.size == 1 && ids[0] == 0)
-                listOf(
-                    values[i * 6],
-                    values[i * 6 + 1],
-                    values[i * 6 + 2],
-                    values[i * 6 + 3],
-                )
-                else
             listOf(
                 values[i],
                 values[i + 1 * size],

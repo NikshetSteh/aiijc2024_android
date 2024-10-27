@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ui.fragments.LoadImage
 import ru.naviai.aiijc.ui.fragments.Photo
 import ru.naviai.aiijc.ui.fragments.Results
@@ -36,6 +37,7 @@ fun MainScreen(
     var initialBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     var imageRect by remember { mutableStateOf(ImageRect(IntOffset.Zero, IntOffset.Zero)) }
+    var model by remember { mutableStateOf<Model?>(null) }
 
     var type by remember {
         mutableStateOf(resources.getString(R.string.type_circle))
@@ -82,7 +84,14 @@ fun MainScreen(
                 )
             }
             ScreenState.Results -> {
-                currentBitmap?.let { Results(it, imageRect, type, onBack = { state = ScreenState.Camera }) }
+                currentBitmap?.let { Results(
+                    bitmap=it,
+                    imageRect = imageRect,
+                    type = type,
+                    onBack = { state = ScreenState.Camera },
+                    lastModel = model,
+                    onModelLoaded = { newModel ->  model = newModel }
+                ) }
             }
         }
     }

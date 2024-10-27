@@ -86,9 +86,12 @@ fun Photo(
             @Suppress("DEPRECATION")
             MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         }
-        bitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, false)
 
-        onLoad(bitmap!!)
+        if (bitmap != null) {
+            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+
+            onLoad(bitmap!!)
+        }
     }
 
     var sizeX: Float

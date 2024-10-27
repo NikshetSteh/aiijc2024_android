@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -30,8 +31,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.Model
@@ -48,14 +52,21 @@ fun Results(
     bitmap: Bitmap,
     imageRect: ImageRect,
     type: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onModelLoaded: (Model) -> Unit,
+    lastModel: Model?
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
     var prediction by remember {
         mutableStateOf<ModelResults?>(null)
     }
     val context = LocalContext.current
-    val model by remember { mutableStateOf(Model(context)) }
+    val model by remember { mutableStateOf(lastModel ?: Model(context)) }
+    var modelLoaded by remember { mutableStateOf(false) }
+    if (!modelLoaded) {
+        modelLoaded = true
+        onModelLoaded(model)
+    }
 
     var needPrediction by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(true) }
@@ -75,7 +86,10 @@ fun Results(
                 imageRect.imageSize.y
             )
         } else {
-            Log.i("kilo", "Content offsets: ${imageRect.contentOffset.x} ${imageRect.contentOffset.y}")
+            Log.i(
+                "kilo",
+                "Content offsets: ${imageRect.contentOffset.x} ${imageRect.contentOffset.y}"
+            )
             cropped = Bitmap.createBitmap(
                 bitmap,
                 imageRect.contentOffset.x,
@@ -121,7 +135,9 @@ fun Results(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
         contentAlignment = Alignment.TopCenter
     ) {
         Image(
@@ -149,16 +165,22 @@ fun Results(
                 contentAlignment = Alignment.Center
             ) {
                 if (prediction != null) {
-                    val restoredImage = Bitmap.createScaledBitmap(
-                        prediction!!.bitmap,
-                        imageRect.imageSize.x,
-                        imageRect.imageSize.y,
-                        true
-                    )
-                    Image(
-                        bitmap = restoredImage.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = ContentScale.None
+//                    val restoredImage = Bitmap.createScaledBitmap(
+//                        prediction!!.bitmap,
+//                        imageRect.imageSize.x,
+//                        imageRect.imageSize.y,
+//                        true
+//                    )
+//                    Image(
+//                        bitmap = restoredImage.asImageBitmap(),
+//                        contentDescription = null,
+//                        contentScale = ContentScale.None
+//                    )
+
+                    ResultsItems(
+                        items = prediction!!.items,
+                        imageRect.imageSize,
+                        prediction!!.meanSize.toDp().value
                     )
                 }
                 EditRectangle(
@@ -198,7 +220,10 @@ fun Results(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(prediction?.count.toString())
+                            Text(
+                                prediction?.count.toString(),
+                                color = Color.Black
+                            )
                         }
                     }
                 }
@@ -208,5 +233,57 @@ fun Results(
                 }
             }
         }
+    }
+}
+
+
+class Item(
+    val offset: IntOffset,
+    val value: Int
+)
+
+
+@Composable
+fun ResultItem(
+    title: String,
+    fontSize: Float,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painterResource(R.drawable.ellipse_item),
+            contentDescription = null,
+        )
+        Text(
+            text = title,
+            fontSize = (0.5 * fontSize).sp
+        )
+    }
+}
+
+
+@Composable
+fun ResultsItems(
+    items: List<Item>,
+    imageSize: IntOffset,
+    size: Float
+) {
+    for (item in items) {
+//        Log.i("kilo", "Item: ${item.value} offset: ${item.offset.x} ${item.offset.y}")
+        ResultItem(
+            item.value.toString(),
+            modifier = Modifier
+                .offset {
+                    IntOffset(
+                        (-imageSize.x / 2 + item.offset.x.toFloat() / 640 * imageSize.x).roundToInt(),
+                        (-imageSize.y / 2 + item.offset.y.toFloat() / 640 * imageSize.y).roundToInt()
+                    )
+                }
+                .size(size.dp),
+            fontSize = size
+        )
     }
 }
