@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
@@ -47,10 +48,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import ru.NaviAI.aiijc.R
+import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.Item
 import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ModelResults
+import ru.naviai.aiijc.adjustBitmap
 import ru.naviai.aiijc.makePrediction
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.ResultsItems
@@ -69,13 +72,19 @@ enum class Mode {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Results(
-    bitmap: Bitmap,
+    initialBitmap: Bitmap,
     imageRect: ImageRect,
     type: String,
     onBack: () -> Unit,
     onModelLoaded: (Model) -> Unit,
-    lastModel: Model?
+    lastModel: Model?,
+    onFilters: () -> Unit,
+    filters: FiltersParams
 ) {
+    val bitmap by remember { mutableStateOf(
+        adjustBitmap(initialBitmap, filters.brightness, filters.saturation, filters.sharpness)
+    ) }
+
     val screenHeight = LocalConfiguration.current.screenHeightDp
     var prediction by remember {
         mutableStateOf<ModelResults?>(null)
@@ -353,8 +362,17 @@ fun Results(
                     }
                 }
 
-                Button(onClick = onBack) {
-                    Text(stringResource(R.string.action_back))
+
+                Row(
+                    modifier =  Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Button(onClick = onFilters) {
+                        Text(stringResource(R.string.action_filters))
+                    }
+                    Button(onClick = onBack) {
+                        Text(stringResource(R.string.action_back))
+                    }
                 }
             }
         }

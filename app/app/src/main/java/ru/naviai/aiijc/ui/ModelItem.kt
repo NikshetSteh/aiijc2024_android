@@ -32,7 +32,8 @@ fun ResultItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
     useBox: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    color: Color
 ) {
     with(LocalDensity.current) {
         Box(
@@ -49,13 +50,13 @@ fun ResultItem(
                             .height(size.y.toDp())
                             .width(size.x.toDp())
                             .alpha(0.4f)
-                            .background(Color(217, 217, 217))
+                            .background(color)
                     } else {
                         Modifier
                             .height(size.y.toDp())
                             .width(size.x.toDp())
                             .alpha(0.4f)
-                            .background(Color(217, 217, 217))
+                            .background(color)
                     },
                 ) {}
             } else {
@@ -99,6 +100,26 @@ fun ResultsItems(
     actionMode: Mode = Mode.NONE,
     isRectangle: Boolean
 ) {
+    val colors = listOf(
+        Color(240 , 128 , 128),
+        Color(255 , 192 , 203),
+        Color(255 , 160 , 122),
+        Color(240 , 230 , 140),
+        Color(255 , 218 , 185),
+        Color(221 , 160 , 221),
+        Color(255 , 222 , 173),
+        Color(188 , 143 , 143),
+        Color(0 , 128 , 128),
+        Color(152 , 251 , 152),
+        Color(102 , 205 , 170),
+        Color(127 , 255 , 212),
+        Color(95 , 158 , 160),
+        Color(135 , 206 , 250),
+        Color(123 , 104 , 238),
+        Color(250 , 235 , 215),
+        Color(255 , 228 , 225),
+    )
+
     with(LocalDensity.current) {
         var counter = 1
 
@@ -122,7 +143,8 @@ fun ResultsItems(
                     }
                 },
                 useBox = isRectangle,
-                enabled = actionMode == Mode.DELETE
+                enabled = actionMode == Mode.DELETE,
+                color=colors[counter % colors.size]
             )
         }
     }

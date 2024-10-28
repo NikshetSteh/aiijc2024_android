@@ -31,29 +31,35 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import ru.NaviAI.aiijc.R
+import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.adjustBitmap
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.SelectField
-import java.io.File
-import java.io.FileOutputStream
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 @Composable
 fun LoadImage(
-    image: Bitmap,
+    initialBitmap: Bitmap,
     onReady: (Bitmap, ImageRect, String) -> Unit,
     onBack: () -> Unit,
-    startType: String
+    onFilters: () -> Unit,
+    startType: String,
+    filters: FiltersParams
 ) {
+    val image by remember {
+        mutableStateOf(
+            adjustBitmap(initialBitmap, filters.brightness, filters.saturation, filters.sharpness)
+        )
+    }
     var type by remember { mutableStateOf(startType) }
     var size = Offset.Zero
 
@@ -78,7 +84,6 @@ fun LoadImage(
         var offset by remember {
             mutableStateOf(Offset(0f, base))
         }
-        val context = LocalContext.current
 
         Box(
             modifier = Modifier
@@ -176,83 +181,64 @@ fun LoadImage(
                         value = type
                     )
 
-                    Row(
-                        modifier = Modifier.width((screenWidth / 2).dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        IconButton(onClick = {
-                            val buffer = IntOffset(
-                                ((imageWidth - size.x) / 2 - offset.x).roundToInt(),
-                                (3f * screenHeight.dp.toPx() / 8 - size.y / 2f - offset.y).roundToInt()
-                            )
+                        Row(
+                            modifier = Modifier.width((screenWidth / 2).dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            IconButton(onClick = {
+                                val buffer = IntOffset(
+                                    ((imageWidth - size.x) / 2 - offset.x).roundToInt(),
+                                    (3f * screenHeight.dp.toPx() / 8 - size.y / 2f - offset.y).roundToInt()
+                                )
 
-                            val croppedImage = Bitmap.createBitmap(
-                                image,
-                                (buffer.x / imageWidth * image.width).roundToInt(),
-                                (buffer.y / imageHeight * image.height).roundToInt(),
-                                (size.x.roundToInt() / imageWidth * image.width).roundToInt(),
-                                (size.y.roundToInt() / imageHeight * image.height).roundToInt()
-                            )
-
-                            val file = File(context.cacheDir, "cropped.png")
-                            val outputStream = FileOutputStream(file)
-                            croppedImage.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                            outputStream.flush()
-                            outputStream.close()
-
-                            onReady(
-                                image,
-                                ImageRect(
-                                    IntOffset(offset.x.roundToInt(), offset.y.roundToInt()),
-                                    IntOffset(size.x.roundToInt(), size.y.roundToInt()),
-                                    IntOffset(
-                                        (buffer.x / imageWidth * image.width).roundToInt(),
-                                        (buffer.y / imageHeight * image.height).roundToInt(),
+                                onReady(
+                                    initialBitmap,
+                                    ImageRect(
+                                        IntOffset(offset.x.roundToInt(), offset.y.roundToInt()),
+                                        IntOffset(size.x.roundToInt(), size.y.roundToInt()),
+                                        IntOffset(
+                                            (buffer.x / imageWidth * image.width).roundToInt(),
+                                            (buffer.y / imageHeight * image.height).roundToInt(),
+                                        ),
+                                        IntOffset(
+                                            (size.x.roundToInt() / imageWidth * image.width).roundToInt(),
+                                            (size.y.roundToInt() / imageHeight * image.height).roundToInt()
+                                        )
                                     ),
-                                    IntOffset(
-                                        (size.x.roundToInt() / imageWidth * image.width).roundToInt(),
-                                        (size.y.roundToInt() / imageHeight * image.height).roundToInt()
+                                    type
+                                )
+                            }) {
+                                Image(
+                                    painter = painterResource(R.drawable.ellipse),
+                                    contentDescription = null,
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Row(
+                                modifier = Modifier.width((screenWidth / 2).dp),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                IconButton(onClick = onFilters) {
+                                    Image(
+                                        painter = painterResource(R.drawable.tune),
+                                        contentDescription = null,
                                     )
-                                ),
-                                type
-                            )
-                        }) {
-                            Image(
-                                painter = painterResource(R.drawable.ellipse),
-                                contentDescription = null,
-                            )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .offset {
-//                    IntOffset((-imageWidth / 2).roundToInt(), 0)
-//                },
-//            contentAlignment = Alignment.TopCenter
-//        ) {
-//            val buffer = IntOffset(
-//                ((imageWidth - size.x) / 2 - offset.x).roundToInt(),
-//                (3f * screenHeight.dp.toPx() / 8 - size.y / 2f - offset.y).roundToInt()
-//            )
-//
-//            Icon(
-//                Icons.Filled.AddCircle,
-//                contentDescription = null,
-//                tint = Color.White,
-//                modifier = Modifier
-//                    .offset{
-//                        IntOffset(
-//                            offset.x.roundToInt() + buffer.x,
-//                            offset.y.roundToInt() + buffer.y
-//                        )
-//                    }
-//            )
-//        }
     }
 }
 

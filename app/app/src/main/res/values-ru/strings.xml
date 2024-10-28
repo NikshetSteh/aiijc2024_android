@@ -26,4 +26,6 @@
     <string name="action_apply">Применить</string>
     <string name="action_reset">Сбросить</string>
     <string name="action_filters">Фильтры</string>
+    <string name="title_iou">Слияние меток</string>
+    <string name="title_threshold">"Чувствительность "</string>
 </resources>

@@ -15,14 +15,16 @@ import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import ru.NaviAI.aiijc.R
+import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.Model
+import ru.naviai.aiijc.ui.fragments.Filters
 import ru.naviai.aiijc.ui.fragments.LoadImage
 import ru.naviai.aiijc.ui.fragments.Photo
 import ru.naviai.aiijc.ui.fragments.Results
 
 enum class ScreenState {
-    Camera, LoadImage, Results
+    Camera, LoadImage, Results, Filters
 }
 
 @Composable
@@ -33,8 +35,10 @@ fun MainScreen(
     val resources = LocalContext.current.resources
 
     var state by remember { mutableStateOf(ScreenState.Camera) }
+    var previousState by remember { mutableStateOf(ScreenState.Camera) }
     var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var initialBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var filters by remember { mutableStateOf(FiltersParams()) }
 
     var imageRect by remember { mutableStateOf(ImageRect(IntOffset.Zero, IntOffset.Zero)) }
     var model by remember { mutableStateOf<Model?>(null) }
@@ -57,41 +61,77 @@ fun MainScreen(
                         }
                     },
                     onLoad = {
+                        previousState = ScreenState.Camera
                         state = ScreenState.LoadImage
                         currentBitmap = it
                         initialBitmap = it
                     },
                     onCapture = { bitmap, rect, newType ->
+                        previousState = ScreenState.Camera
                         state = ScreenState.Results
                         currentBitmap = bitmap
+                        initialBitmap = bitmap
                         imageRect = rect
                         type = newType
                     },
                     startType = type
                 )
             }
+
             ScreenState.LoadImage -> {
                 LoadImage(
                     currentBitmap!!,
                     onReady = { bitmap, rect, newType ->
+                        previousState = ScreenState.LoadImage
                         state = ScreenState.Results
                         currentBitmap = bitmap
+                        initialBitmap = bitmap
                         imageRect = rect
                         type = newType
                     },
                     onBack = { state = ScreenState.Camera },
-                    startType = type
+                    startType = type,
+                    filters = filters,
+                    onFilters = {
+                        previousState = state
+                        state = ScreenState.Filters
+                    }
                 )
             }
+
             ScreenState.Results -> {
-                currentBitmap?.let { Results(
-                    bitmap=it,
-                    imageRect = imageRect,
-                    type = type,
-                    onBack = { state = ScreenState.Camera },
-                    lastModel = model,
-                    onModelLoaded = { newModel ->  model = newModel }
-                ) }
+                currentBitmap?.let {
+                    Results(
+                        it,
+                        imageRect = imageRect,
+                        type = type,
+                        onBack = {
+                            previousState = state
+                            state = ScreenState.Camera
+                        },
+                        lastModel = model,
+                        onModelLoaded = { newModel -> model = newModel },
+                        onFilters = {
+                            previousState = state
+                            state = ScreenState.Filters
+                        },
+                        filters = filters
+                    )
+                }
+            }
+
+            ScreenState.Filters -> {
+                initialBitmap?.let {
+                    Filters(
+                        bitmap = it,
+                        imageRect = imageRect,
+                        onReady = { newFilters ->
+                            state = previousState
+                            previousState = ScreenState.Filters
+                            filters = newFilters
+                        }
+                    )
+                }
             }
         }
     }

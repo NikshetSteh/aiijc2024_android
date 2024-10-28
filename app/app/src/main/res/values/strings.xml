@@ -26,4 +26,6 @@
     <string name="action_apply">Apply</string>
     <string name="action_reset">Reset</string>
     <string name="action_filters">Filters</string>
+    <string name="title_iou">Merging labels</string>
+    <string name="title_threshold">Sensitivity</string>
 </resources>
