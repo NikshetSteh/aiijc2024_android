@@ -24,7 +24,8 @@ fun EditRectangle(
     minHeight: Float,
     maxHeight: Float,
     minWidth: Float,
-    maxWidth: Float
+    maxWidth: Float,
+    enabled: Boolean = true
 ): Offset {
     with(LocalDensity.current) {
         var size by remember {
@@ -38,7 +39,7 @@ fun EditRectangle(
         if (size.x > maxWidth) {
             size = Offset(maxWidth, size.y)
         }
-        if(size.y > maxHeight) {
+        if (size.y > maxHeight) {
             size = Offset(size.x, maxHeight)
         }
 
@@ -69,7 +70,8 @@ fun EditRectangle(
 
                     size = Offset(bufferX, bufferY)
                 }
-            }
+            },
+            enabled
         )
 
         MoveIcon(
@@ -95,7 +97,8 @@ fun EditRectangle(
 
                     size = Offset(bufferX, bufferY)
                 }
-            }
+            },
+            enabled
         )
 
         MoveIcon(
@@ -121,7 +124,8 @@ fun EditRectangle(
 
                     size = Offset(bufferX, bufferY)
                 }
-            }
+            },
+            enabled
         )
 
         MoveIcon(
@@ -147,7 +151,8 @@ fun EditRectangle(
 
                     size = Offset(bufferX, bufferY)
                 }
-            }
+            },
+            enabled
         )
         return size
     }
@@ -158,18 +163,24 @@ fun MoveIcon(
     offsetX: Float,
     offsetY: Float,
     bitmap: Painter,
-    callback: (Float, Float) -> Unit
+    callback: (Float, Float) -> Unit,
+    enabled: Boolean
 ) {
     Image(
         bitmap,
         contentDescription = null,
-        modifier = Modifier
-            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    callback(dragAmount.x, dragAmount.y)
+        modifier =
+        if(enabled) {
+            Modifier
+                .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                .pointerInput(Unit) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        callback(dragAmount.x, dragAmount.y)
+                    }
                 }
-            }
+        } else {
+            Modifier.offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+        }
     )
 }

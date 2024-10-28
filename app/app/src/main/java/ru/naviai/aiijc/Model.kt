@@ -9,7 +9,6 @@ import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
 import org.pytorch.torchvision.TensorImageUtils
-import ru.naviai.aiijc.ui.fragments.Item
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -42,6 +41,12 @@ class ModelResults(
     val items: List<Item>,
     val meanSize: Offset,
 )
+
+
+class Item(
+    val offset: IntOffset
+)
+
 
 class Model(context: Context) {
     enum class PredictionsType {
@@ -115,7 +120,7 @@ private fun postprocessOutput(tensor: Tensor, type: List<Int>): ModelResults {
                 sizeSumY / objects.size
             )
         else
-             Offset(40f, 40f)
+            Offset(40f, 40f)
     )
 }
 

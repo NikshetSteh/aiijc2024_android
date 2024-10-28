@@ -2,16 +2,19 @@ package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
 import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
@@ -33,10 +36,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -45,15 +48,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.Item
 import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ModelResults
 import ru.naviai.aiijc.makePrediction
 import ru.naviai.aiijc.ui.EditRectangle
+import ru.naviai.aiijc.ui.ResultsItems
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -63,6 +68,7 @@ enum class Mode {
 }
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Results(
     bitmap: Bitmap,
@@ -149,36 +155,54 @@ fun Results(
     }
 
 
-    if(!modelLoaded && model != null) {
+    if (!modelLoaded && model != null) {
         onModelLoaded(model!!)
         modelLoaded = true
     }
 
-    if(!isModelLoading && model == null) {
+    if (!isModelLoading && model == null) {
         isModelLoading = true
         LaunchedEffect(Unit) {
             model = Model(context)
-            if(!modelLoaded) {
+            if (!modelLoaded) {
                 onModelLoaded(model!!)
                 modelLoaded = true
             }
         }
     }
 
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+        scale = max(min(scale * zoomChange, 3f), 1f)
+        offset += offsetChange
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(Color.Black)
+            .offset {
+                IntOffset(
+                    offset.x.roundToInt() + imageRect.imageOffset.x,
+                    offset.y.roundToInt() + imageRect.imageOffset.y
+                )
+            }
+            .transformable(state = state, canPan = { scale != 1f }),
         contentAlignment = Alignment.TopCenter
     ) {
         Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = null,
             modifier = Modifier
-                .offset {
-                    imageRect.imageOffset
+//                .offset {
+//                    imageRect.imageOffset
+//                }
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
                 },
-            contentScale = ContentScale.FillWidth
+            contentScale = ContentScale.FillWidth,
         )
     }
 
@@ -190,58 +214,89 @@ fun Results(
         with(LocalDensity.current) {
             Box(
                 modifier = Modifier
-                    .offset(y = (-screenHeight / 8).dp)
-                    .height(imageRect.imageSize.x.toDp())
-                    .width(screenWidth.dp),
+                    .fillMaxSize()
+                    .offset {
+                        IntOffset(
+                            0,
+                            (-screenHeight.dp.toPx() / 8 * (
+                                    if (imageRect.contentSize == null) {
+                                        scale
+                                    } else {
+                                        1f
+                                    })
+                                    ).roundToInt()
+                        )
+                    },
                 contentAlignment = Alignment.Center
             ) {
-                EditRectangle(
-                    imageRect.imageSize.y.toFloat(),
-                    imageRect.imageSize.y.toFloat(),
-                    imageRect.imageSize.x.toFloat(),
-                    imageRect.imageSize.x.toFloat(),
-                )
-                if (prediction != null) {
-                    ResultsItems(
-                        items = prediction!!.items,
-                        imageRect.imageSize,
-                        prediction!!.meanSize,
-                        actionMode = mode,
-                        onChange = { items ->
-                            prediction = ModelResults(
-                                items.size,
-                                items,
-                                prediction!!.meanSize
+                Box(
+                    modifier = Modifier
+//                    .offset(y = (-screenHeight / 8).dp)
+                        .height(imageRect.imageSize.y.toDp())
+                        .fillMaxWidth()
+                        .offset {
+                            IntOffset(
+                                offset.x.roundToInt(),
+                                offset.y.roundToInt()
                             )
+                        }
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
                         },
-                        isRectangle = type == stringResource(R.string.type_rectangle) || type == stringResource(R.string.type_quad),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EditRectangle(
+                        imageRect.imageSize.y.toFloat(),
+                        imageRect.imageSize.y.toFloat(),
+                        imageRect.imageSize.x.toFloat(),
+                        imageRect.imageSize.x.toFloat(),
+                        false
                     )
-                }
+                    if (prediction != null) {
+                        ResultsItems(
+                            items = prediction!!.items,
+                            imageRect.imageSize,
+                            prediction!!.meanSize,
+                            actionMode = mode,
+                            onChange = { items ->
+                                prediction = ModelResults(
+                                    items.size,
+                                    items,
+                                    prediction!!.meanSize
+                                )
+                            },
+                            isRectangle = type == stringResource(R.string.type_rectangle) || type == stringResource(
+                                R.string.type_quad
+                            )
+                        )
+                    }
 
-                if (mode == Mode.ADD) {
-                    Box(
-                        modifier = Modifier
-                            .width(imageRect.imageSize.x.toDp())
-                            .height(imageRect.imageSize.y.toDp())
-                            .pointerInput(Unit) {
-                                detectTapGestures { offset ->
-                                    Log.i("kilo", "Offset: ${offset.x} ${offset.y}")
-                                    prediction.let {
-                                        prediction = ModelResults(
-                                            it!!.items.size + 1,
-                                            it.items +
-                                                    Item(
-                                                        IntOffset(
-                                                            (offset.x / imageRect.imageSize.x * 640).roundToInt(),
-                                                            (offset.y / imageRect.imageSize.y * 640).roundToInt(),
-                                                        )
-                                                    ),
-                                            it.meanSize
-                                        )
+                    if (mode == Mode.ADD) {
+                        Box(
+                            modifier = Modifier
+                                .width(imageRect.imageSize.x.toDp())
+                                .height(imageRect.imageSize.y.toDp())
+                                .pointerInput(Unit) {
+                                    detectTapGestures { offset ->
+                                        Log.i("kilo", "Offset: ${offset.x} ${offset.y}")
+                                        prediction.let {
+                                            prediction = ModelResults(
+                                                it!!.items.size + 1,
+                                                it.items +
+                                                        Item(
+                                                            IntOffset(
+                                                                (offset.x / imageRect.imageSize.x * 640).roundToInt(),
+                                                                (offset.y / imageRect.imageSize.y * 640).roundToInt(),
+                                                            )
+                                                        ),
+                                                it.meanSize
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -319,95 +374,3 @@ fun Results(
     }
 }
 
-
-class Item(
-    val offset: IntOffset
-)
-
-
-@Composable
-fun ResultItem(
-    title: String,
-    size: Offset,
-    fontSize: Float,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
-    useBox: Boolean = false
-) {
-    with(LocalDensity.current) {
-        Box(
-            modifier,
-            contentAlignment = Alignment.Center
-        ) {
-            if (useBox) {
-                Box(
-                    modifier = Modifier
-                        .clickable(
-                            onClick = onClick
-                        )
-                        .height(size.y.toDp())
-                        .width(size.x.toDp())
-                        .alpha(0.4f)
-                        .background(Color(217, 217, 217)),
-                ) {}
-            } else {
-                Card(
-                    modifier = Modifier
-                        .clickable(
-                            onClick = onClick
-                        )
-                        .height(size.y.toDp())
-                        .width(size.x.toDp())
-                        .alpha(0.4f),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(217, 217, 217)
-                    )
-                ) {
-
-                }
-            }
-            Text(
-                text = title,
-                fontSize = (0.16 * fontSize).sp
-            )
-        }
-    }
-}
-
-
-@Composable
-fun ResultsItems(
-    items: List<Item>,
-    imageSize: IntOffset,
-    size: Offset,
-    onChange: (List<Item>) -> Unit,
-    actionMode: Mode = Mode.NONE,
-    isRectangle: Boolean
-) {
-    with(LocalDensity.current) {
-        var counter = 1
-
-        for (item in items) {
-            ResultItem(
-                (counter++).toString(),
-                modifier = Modifier
-                    .offset {
-                        IntOffset(
-                            (-imageSize.x / 2 + item.offset.x.toFloat() / 640 * imageSize.x).roundToInt(),
-                            (-imageSize.y / 2 + item.offset.y.toFloat() / 640 * imageSize.y).roundToInt()
-                        )
-                    }
-                    .height(size.x.toDp())
-                    .width(size.y.toDp()),
-                size = size,
-                fontSize = min(size.x, size.y),
-                onClick = {
-                    if (actionMode == Mode.DELETE) {
-                        onChange(items - item)
-                    }
-                },
-                useBox = isRectangle
-            )
-        }
-    }
-}

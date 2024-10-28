@@ -103,7 +103,9 @@ fun Photo(
     var sizeX: Float
     var sizeY: Float
 
-    var size = Offset(0f, 0f)
+    var size by remember {
+        mutableStateOf(Offset(0f, 0f))
+    }
 
     with(LocalDensity.current) {
         sizeX = LocalConfiguration.current.screenWidthDp.dp.toPx()
@@ -138,7 +140,7 @@ fun Photo(
                     contentDescription = null,
                     tint = Color.White
                 )
-                if(isLoading) {
+                if (isLoading) {
                     CircularProgressIndicator(
                         color = Color.White,
                         modifier = Modifier.size(64.dp)
