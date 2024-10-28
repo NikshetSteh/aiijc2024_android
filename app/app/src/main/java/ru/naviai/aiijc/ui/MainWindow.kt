@@ -57,7 +57,9 @@ fun MainWindow(
         mutableStateOf(State.Main)
     }
 
+
     ModalNavigationDrawer(
+        gesturesEnabled = drawerState.isOpen,
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {

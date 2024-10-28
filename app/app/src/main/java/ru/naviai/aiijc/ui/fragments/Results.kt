@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -33,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -40,7 +41,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -53,6 +53,7 @@ import ru.naviai.aiijc.makePrediction
 import ru.naviai.aiijc.ui.EditRectangle
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 
@@ -91,10 +92,6 @@ fun Results(
     }
 
     if (needPrediction) {
-        Log.i("kilo", "Bitmap sizes: ${bitmap.width} ${bitmap.height}")
-        Log.i("kilo", "Rect sizes: ${imageRect.imageSize.x} ${imageRect.imageSize.y}")
-        Log.i("kilo", "Rect offsets: ${imageRect.imageOffset.x} ${imageRect.imageOffset.y}")
-
         val cropped: Bitmap
         if (imageRect.contentOffset == null) {
             cropped = Bitmap.createBitmap(
@@ -193,7 +190,7 @@ fun Results(
                     ResultsItems(
                         items = prediction!!.items,
                         imageRect.imageSize,
-                        prediction!!.meanSize.toDp().value,
+                        prediction!!.meanSize,
                         actionMode = mode,
                         onChange = { items ->
                             prediction = ModelResults(
@@ -201,7 +198,8 @@ fun Results(
                                 items,
                                 prediction!!.meanSize
                             )
-                        }
+                        },
+                        isRectangle = type == stringResource(R.string.type_rectangle) || type == stringResource(R.string.type_quad),
                     )
                 }
 
@@ -315,25 +313,49 @@ class Item(
 @Composable
 fun ResultItem(
     title: String,
+    size: Offset,
     fontSize: Float,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    useBox: Boolean = false
 ) {
-    Box(
-        modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painterResource(R.drawable.ellipse_item),
-            contentDescription = null,
-            modifier = Modifier.clickable(
-                onClick = onClick
+    with(LocalDensity.current) {
+        Box(
+            modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            if (useBox) {
+                Box(
+                    modifier = Modifier
+                        .clickable(
+                            onClick = onClick
+                        )
+                        .height(size.y.toDp())
+                        .width(size.x.toDp())
+                        .alpha(0.4f)
+                        .background(Color(217, 217, 217)),
+                ) {}
+            } else {
+                Card(
+                    modifier = Modifier
+                        .clickable(
+                            onClick = onClick
+                        )
+                        .height(size.y.toDp())
+                        .width(size.x.toDp())
+                        .alpha(0.4f),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(217, 217, 217)
+                    )
+                ) {
+
+                }
+            }
+            Text(
+                text = title,
+                fontSize = (0.16 * fontSize).sp
             )
-        )
-        Text(
-            text = title,
-            fontSize = (0.5 * fontSize).sp
-        )
+        }
     }
 }
 
@@ -342,30 +364,35 @@ fun ResultItem(
 fun ResultsItems(
     items: List<Item>,
     imageSize: IntOffset,
-    size: Float,
+    size: Offset,
     onChange: (List<Item>) -> Unit,
-    actionMode: Mode = Mode.NONE
+    actionMode: Mode = Mode.NONE,
+    isRectangle: Boolean
 ) {
-    var counter = 1
+    with(LocalDensity.current) {
+        var counter = 1
 
-    for (item in items) {
-//        Log.i("kilo", "Item: ${item.value} offset: ${item.offset.x} ${item.offset.y}")
-        ResultItem(
-            (counter++).toString(),
-            modifier = Modifier
-                .offset {
-                    IntOffset(
-                        (-imageSize.x / 2 + item.offset.x.toFloat() / 640 * imageSize.x).roundToInt(),
-                        (-imageSize.y / 2 + item.offset.y.toFloat() / 640 * imageSize.y).roundToInt()
-                    )
-                }
-                .size(size.dp),
-            fontSize = size,
-            onClick = {
-                if (actionMode == Mode.DELETE) {
-                    onChange(items - item)
-                }
-            }
-        )
+        for (item in items) {
+            ResultItem(
+                (counter++).toString(),
+                modifier = Modifier
+                    .offset {
+                        IntOffset(
+                            (-imageSize.x / 2 + item.offset.x.toFloat() / 640 * imageSize.x).roundToInt(),
+                            (-imageSize.y / 2 + item.offset.y.toFloat() / 640 * imageSize.y).roundToInt()
+                        )
+                    }
+                    .height(size.x.toDp())
+                    .width(size.y.toDp()),
+                size = size,
+                fontSize = min(size.x, size.y),
+                onClick = {
+                    if (actionMode == Mode.DELETE) {
+                        onChange(items - item)
+                    }
+                },
+                useBox = isRectangle
+            )
+        }
     }
 }

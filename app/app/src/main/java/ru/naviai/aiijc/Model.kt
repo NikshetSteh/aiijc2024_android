@@ -3,6 +3,7 @@ package ru.naviai.aiijc
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntOffset
 import org.pytorch.IValue
 import org.pytorch.Module
@@ -13,7 +14,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import kotlin.math.abs
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 
@@ -40,7 +40,7 @@ fun assetFilePath(context: Context, assetName: String?): String? {
 class ModelResults(
     val count: Int,
     val items: List<Item>,
-    val meanSize: Int
+    val meanSize: Offset,
 )
 
 class Model(context: Context) {
@@ -92,10 +92,12 @@ class Model(context: Context) {
 private fun postprocessOutput(tensor: Tensor, type: List<Int>): ModelResults {
     val objects = processModelOutput(tensor, 0.6f, 0.2f, type)
 
-    var sizeSum = 0f
+    var sizeSumX = 0f
+    var sizeSumY = 0f
 
     val items = objects.map {
-        sizeSum += min(abs(it[2] - it[0]), abs(it[3] - it[1]))
+        sizeSumX += abs(it[2] - it[0])
+        sizeSumY += abs(it[3] - it[1])
         Item(
             IntOffset(
                 ((it[0] + it[2]) / 2).roundToInt(),
@@ -104,15 +106,16 @@ private fun postprocessOutput(tensor: Tensor, type: List<Int>): ModelResults {
         )
     }
 
-    Log.i("kilo", "Size sum: $sizeSum")
-    Log.i("kilo", "Items count: ${objects.size}")
-    Log.i("kilo", "Mean: ${sizeSum / objects.size / 2}")
-
-
     return ModelResults(
         objects.size,
         items,
-        if (objects.isNotEmpty()) (sizeSum / objects.size).roundToInt() else 40
+        if (objects.isNotEmpty())
+            Offset(
+                sizeSumX / objects.size,
+                sizeSumY / objects.size
+            )
+        else
+             Offset(40f, 40f)
     )
 }
 
