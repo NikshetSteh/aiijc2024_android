@@ -15,4 +15,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "Aiijc2024"
 include(":app")
+include(":openCVLibrary4100")
+
  

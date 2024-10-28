@@ -1,6 +1,7 @@
 package ru.naviai.aiijc.ui.screens
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.DrawerState
@@ -14,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.opencv.android.OpenCVLoader
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
@@ -32,6 +34,17 @@ fun MainScreen(
     scope: CoroutineScope,
     drawerState: DrawerState
 ) {
+    var opencvLoaded by remember { mutableStateOf(false) }
+
+    if(!opencvLoaded) {
+        if (OpenCVLoader.initLocal()) {
+            Log.i("kilo", "OpenCV loaded")
+            opencvLoaded = true
+        } else {
+            Log.i("kilo", "OpenCV not loaded")
+        }
+    }
+
     val resources = LocalContext.current.resources
 
     var state by remember { mutableStateOf(ScreenState.Camera) }

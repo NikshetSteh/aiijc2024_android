@@ -1,13 +1,15 @@
 package ru.naviai.aiijc
 
+import android.R.attr
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
-import android.graphics.Matrix
 import android.graphics.Paint
-import kotlin.math.roundToInt
+import org.opencv.android.Utils
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.imgproc.Imgproc
 
 
 class FiltersParams(
@@ -57,7 +59,52 @@ fun adjustBitmap(
     // Draw the original bitmap onto the new bitmap using the paint with the color filter
     canvas.drawBitmap(bitmap, 0f, 0f, paint)
 
-    return resultBitmap
+    return applySharpnessFilter(resultBitmap, sharpness.toDouble())
+}
+
+private fun JPGtoRGB888(img: Bitmap): Bitmap {
+    val result: Bitmap?
+    val numPixels = img.width * img.height
+    val pixels = IntArray(numPixels)
+    //        get jpeg pixels, each int is the color value of one pixel
+    img.getPixels(pixels, 0, img.width, 0, 0, img.width, img.height)
+    //        create bitmap in appropriate format
+    result = Bitmap.createBitmap(img.width, img.height, Bitmap.Config.ARGB_8888)
+    //        Set RGB pixels
+    result.setPixels(pixels, 0, result.width, 0, 0, result.width, result.height)
+    return result
+}
+
+fun applySharpnessFilter(
+    bitmap: Bitmap,
+    k: Double
+): Bitmap {
+    val k0 = k / 100
+    val k1 = 8 * k0 + 1
+    val k2 = -1 * k0
+
+    val bmp32 = JPGtoRGB888(bitmap)
+
+    val sourceMat = Mat()
+    Utils.bitmapToMat(bmp32, sourceMat)
+
+    val convMat = Mat(3, 3, CvType.CV_32F)
+
+    convMat.put(0, 0, k2)
+    convMat.put(0, 1, k2)
+    convMat.put(0, 2, k2)
+    convMat.put(1, 0, k2)
+    convMat.put(1, 1, k1)
+    convMat.put(1, 2, k2)
+    convMat.put(2, 0, k2)
+    convMat.put(2, 1, k2)
+    convMat.put(2, 2, k2)
+
+    Imgproc.filter2D(sourceMat, sourceMat, sourceMat.depth(), convMat);
+
+    Utils.matToBitmap(sourceMat, bitmap)
+
+    return bitmap
 }
 
 //fun applySharpeningFilter(

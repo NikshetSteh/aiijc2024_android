@@ -38,7 +38,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
+//        jvmTarget = "1.8"
         jvmTarget = "1.8"
+//        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -49,6 +51,18 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+
+        pickFirst("lib/x86/libc++_shared.so")
+        pickFirst("lib/x86_64/libc++_shared.so")
+        pickFirst("lib/armeabi-v7a/libc++_shared.so")
+        pickFirst("lib/arm64-v8a/libc++_shared.so")
+    }
+    sourceSets {
+        getByName("main") {
+            jni {
+                srcDirs("src\\main\\jni", "src\\main\\jniLibs")
+            }
         }
     }
 }
@@ -71,6 +85,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.camera:camera-extensions:1.3.4")
     implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation(project(":openCVLibrary4100"))
 
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     debugImplementation("androidx.compose.ui:ui-tooling")

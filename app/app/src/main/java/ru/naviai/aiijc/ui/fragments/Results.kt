@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import org.opencv.android.Utils
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
@@ -85,6 +86,21 @@ fun Results(
     onFilters: () -> Unit,
     filters: FiltersParams
 ) {
+    var end by remember { mutableStateOf(false) }
+
+    if(!end){
+        val file = File(LocalContext.current.cacheDir, "image.jpg")
+        val out = FileOutputStream(file)
+        initialBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        out.flush()
+        out.close()
+
+
+
+        end = true
+    }
+
+
     val bitmap by remember {
         mutableStateOf(
             adjustBitmap(initialBitmap, filters.brightness, filters.saturation, filters.sharpness)
