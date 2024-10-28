@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -63,6 +65,8 @@ fun Photo(
     val verticalPaddings = 64
     val horizontalPaddings = 16
 
+    var isLoading by remember { mutableStateOf(false) }
+
     var type by remember { mutableStateOf(startType) }
 
     val height = screenHeight / 4f * 3 - verticalPaddings * 2
@@ -91,6 +95,8 @@ fun Photo(
             bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
 
             onLoad(bitmap!!)
+        } else {
+            isLoading = false
         }
     }
 
@@ -117,7 +123,7 @@ fun Photo(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = androidx.compose.ui.Alignment.TopStart
         ) {
-            IconButton(onClick = onMenu) {
+            IconButton(onClick = onMenu, enabled = !isLoading) {
                 Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
             }
         }
@@ -132,6 +138,12 @@ fun Photo(
                     contentDescription = null,
                     tint = Color.White
                 )
+                if(isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(64.dp)
+                    )
+                }
                 size = EditRectangle(
                     90.dp.toPx(),
                     height.dp.toPx(),
@@ -168,11 +180,13 @@ fun Photo(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    IconButton(onClick = {
-                        takePhoto(imageCapture, context) {
+                    IconButton(
+                        onClick = {
+                            isLoading = true
                             launcher.launch("image/*")
-                        }
-                    }) {
+                        },
+                        enabled = !isLoading
+                    ) {
                         Icon(
                             ImageVector.vectorResource(R.drawable.upload),
                             contentDescription = null,
@@ -180,43 +194,51 @@ fun Photo(
                         )
                     }
 
-                    IconButton(onClick = {
-                        takePhoto(imageCapture, context) {
-                            val imageHeight = it.height.toFloat()
-                            val imageWidth = sizeX * (it.height.toFloat() / sizeY)
+                    IconButton(
+                        onClick = {
+                            takePhoto(imageCapture, context) {
+                                isLoading = true
 
-                            val cropped = Bitmap.createBitmap(
-                                it,
-                                ((it.width - imageWidth) / 2).roundToInt(),
-                                0,
-                                imageWidth.roundToInt(),
-                                imageHeight.roundToInt()
-                            )
+                                val imageHeight = it.height.toFloat()
+                                val imageWidth = sizeX * (it.height.toFloat() / sizeY)
 
-                            val resized = Bitmap.createScaledBitmap(
-                                cropped,
-                                sizeX.roundToInt(),
-                                sizeY.roundToInt(),
-                                true
-                            )
+                                val cropped = Bitmap.createBitmap(
+                                    it,
+                                    ((it.width - imageWidth) / 2).roundToInt(),
+                                    0,
+                                    imageWidth.roundToInt(),
+                                    imageHeight.roundToInt()
+                                )
 
-                            onCapture(
-                                resized,
-                                ImageRect(
-                                    IntOffset(0, 0),
-                                    IntOffset(size.x.roundToInt(), size.y.roundToInt()),
-                                ),
-                                type
-                            )
-                        }
-                    }) {
+                                val resized = Bitmap.createScaledBitmap(
+                                    cropped,
+                                    sizeX.roundToInt(),
+                                    sizeY.roundToInt(),
+                                    true
+                                )
+
+                                onCapture(
+                                    resized,
+                                    ImageRect(
+                                        IntOffset(0, 0),
+                                        IntOffset(size.x.roundToInt(), size.y.roundToInt()),
+                                    ),
+                                    type
+                                )
+                            }
+                        },
+                        enabled = !isLoading
+                    ) {
                         Image(
                             painter = painterResource(R.drawable.ellipse),
                             contentDescription = null,
                         )
                     }
 
-                    IconButton(onClick = { flashLight = !flashLight }) {
+                    IconButton(
+                        onClick = { flashLight = !flashLight },
+                        enabled = !isLoading
+                    ) {
                         Icon(
                             if (flashLight)
                                 ImageVector.vectorResource(R.drawable.flashlight_on)

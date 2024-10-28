@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,12 +78,9 @@ fun Results(
         mutableStateOf<ModelResults?>(null)
     }
     val context = LocalContext.current
-    val model by remember { mutableStateOf(lastModel ?: Model(context)) }
+    var model by remember { mutableStateOf(lastModel) }
+    var isModelLoading by remember { mutableStateOf(false) }
     var modelLoaded by remember { mutableStateOf(false) }
-    if (!modelLoaded) {
-        modelLoaded = true
-        onModelLoaded(model)
-    }
 
     var needPrediction by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(true) }
@@ -91,7 +89,7 @@ fun Results(
         mutableStateOf(Mode.NONE)
     }
 
-    if (needPrediction) {
+    if (needPrediction && model != null) {
         val cropped: Bitmap
         if (imageRect.contentOffset == null) {
             cropped = Bitmap.createBitmap(
@@ -124,7 +122,7 @@ fun Results(
 
         needPrediction = false
         makePrediction(
-            model,
+            model!!,
             buffer,
             onResult = {
                 isLoading = false
@@ -148,6 +146,23 @@ fun Results(
                 }
             }
         )
+    }
+
+
+    if(!modelLoaded && model != null) {
+        onModelLoaded(model!!)
+        modelLoaded = true
+    }
+
+    if(!isModelLoading && model == null) {
+        isModelLoading = true
+        LaunchedEffect(Unit) {
+            model = Model(context)
+            if(!modelLoaded) {
+                onModelLoaded(model!!)
+                modelLoaded = true
+            }
+        }
     }
 
     Box(
