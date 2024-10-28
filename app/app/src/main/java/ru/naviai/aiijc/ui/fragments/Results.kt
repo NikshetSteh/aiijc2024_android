@@ -1,7 +1,6 @@
 package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
@@ -79,7 +77,6 @@ fun Results(
     lastModel: Model?
 ) {
     val screenHeight = LocalConfiguration.current.screenHeightDp
-    val screenWidth = LocalConfiguration.current.screenWidthDp
     var prediction by remember {
         mutableStateOf<ModelResults?>(null)
     }
@@ -106,10 +103,6 @@ fun Results(
                 imageRect.imageSize.y
             )
         } else {
-            Log.i(
-                "kilo",
-                "Content offsets: ${imageRect.contentOffset.x} ${imageRect.contentOffset.y}"
-            )
             cropped = Bitmap.createBitmap(
                 bitmap,
                 imageRect.contentOffset.x,
@@ -188,23 +181,24 @@ fun Results(
                     offset.y.roundToInt() + imageRect.imageOffset.y
                 )
             }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .transformable(state = state, canPan = { scale != 1f }),
         contentAlignment = Alignment.TopCenter
     ) {
         Image(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = null,
-            modifier = Modifier
+            modifier = Modifier,
 //                .offset {
 //                    imageRect.imageOffset
 //                }
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                },
             contentScale = ContentScale.FillWidth,
         )
     }
+
 
     Box(
         modifier = Modifier
@@ -217,32 +211,26 @@ fun Results(
                     .fillMaxSize()
                     .offset {
                         IntOffset(
-                            0,
-                            (-screenHeight.dp.toPx() / 8 * (
-                                    if (imageRect.contentSize == null) {
-                                        scale
-                                    } else {
-                                        1f
-                                    })
+                            (((imageRect.imageOffset.x + offset.x.roundToInt()) - imageRect.imageOffset.x * scale) / 1).roundToInt(),
+                            (
+                                    ((-screenHeight.dp.toPx()) / 8 - (imageRect.imageOffset.y + offset.y)) * scale + (imageRect.imageOffset.y + offset.y)
                                     ).roundToInt()
                         )
+                    }
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
                     },
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-//                    .offset(y = (-screenHeight / 8).dp)
-                        .height(imageRect.imageSize.y.toDp())
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .offset {
                             IntOffset(
-                                offset.x.roundToInt(),
+                                0,
                                 offset.y.roundToInt()
                             )
-                        }
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -279,7 +267,6 @@ fun Results(
                                 .height(imageRect.imageSize.y.toDp())
                                 .pointerInput(Unit) {
                                     detectTapGestures { offset ->
-                                        Log.i("kilo", "Offset: ${offset.x} ${offset.y}")
                                         prediction.let {
                                             prediction = ModelResults(
                                                 it!!.items.size + 1,
