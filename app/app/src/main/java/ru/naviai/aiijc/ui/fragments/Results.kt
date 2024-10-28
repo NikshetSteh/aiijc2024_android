@@ -1,6 +1,8 @@
 package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
+import android.util.Log
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -36,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -81,11 +85,14 @@ fun Results(
     onFilters: () -> Unit,
     filters: FiltersParams
 ) {
-    val bitmap by remember { mutableStateOf(
-        adjustBitmap(initialBitmap, filters.brightness, filters.saturation, filters.sharpness)
-    ) }
+    val bitmap by remember {
+        mutableStateOf(
+            adjustBitmap(initialBitmap, filters.brightness, filters.saturation, filters.sharpness)
+        )
+    }
 
     val screenHeight = LocalConfiguration.current.screenHeightDp
+    val screenWidth = LocalConfiguration.current.screenWidthDp
     var prediction by remember {
         mutableStateOf<ModelResults?>(null)
     }
@@ -201,11 +208,88 @@ fun Results(
             bitmap = bitmap.asImageBitmap(),
             contentDescription = null,
             modifier = Modifier,
-//                .offset {
-//                    imageRect.imageOffset
-//                }
             contentScale = ContentScale.FillWidth,
         )
+
+        with(LocalDensity.current) {
+            Canvas(
+                modifier = Modifier
+                    .width(bitmap.width.toDp())
+                    .height(bitmap.height.toDp())
+                    .offset{
+                        IntOffset(
+                            - imageRect.imageOffset.x,
+                            - imageRect.imageOffset.y
+                        )
+                    }
+            ) {
+                val o1: Offset
+                val o2: Offset
+
+                if (imageRect.o1 == null) {
+                    o1 = Offset(
+                        (bitmap.width - imageRect.imageSize.x) / 2f,
+                        (bitmap.height.toFloat() * 3 / 8 - imageRect.imageSize.y / 2)
+                    )
+                    o2 = Offset(
+                        imageRect.imageSize.x.toFloat(),
+                        imageRect.imageSize.y.toFloat()
+                    )
+                } else {
+                    o1 = imageRect.o1
+                    o2 = imageRect.o2!!
+                }
+
+                Log.i("kilo", "o1: $o1, o2: $o2")
+
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                    size = Size(
+                        o1.x,
+                        imageRect.imageSize.y.toFloat()
+                    ),
+                    topLeft = Offset(
+                        0f,
+                        o1.y
+                    )
+                )
+
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                    size = Size(
+                        size.width - o1.x - o2.x,
+                        imageRect.imageSize.y.toFloat()
+                    ),
+                    topLeft = Offset(
+                        o1.x + o2.x,
+                        o1.y
+                    )
+                )
+
+
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                    size = Size(
+                        size.width,
+                        o1.y
+                    ),
+                    topLeft = Offset.Zero
+                )
+
+
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                    size = Size(
+                        size.width,
+                        size.height - o1.y - o2.y
+                    ),
+                    topLeft = Offset(
+                        0f,
+                        o1.y + o2.y
+                    )
+                )
+            }
+        }
     }
 
 
@@ -364,7 +448,7 @@ fun Results(
 
 
                 Row(
-                    modifier =  Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Button(onClick = onFilters) {

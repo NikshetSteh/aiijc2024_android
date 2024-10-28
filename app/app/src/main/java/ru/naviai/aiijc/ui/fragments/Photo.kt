@@ -7,6 +7,7 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -120,6 +123,67 @@ fun Photo(
             modifier = Modifier.fillMaxSize(),
             flashLight = flashLight
         )
+
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            val o1 =  Offset(
+                (screenWidth.dp.toPx() - size.x) / 2f,
+                (screenHeight.dp.toPx() * 3 / 8 - size.y / 2)
+            )
+            val o2 = Offset(
+                size.x,
+                size.y
+            )
+
+            drawRect(
+                color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                size = Size(
+                    o1.x,
+                    size.y
+                ),
+                topLeft = Offset(
+                    0f,
+                    o1.y
+                )
+            )
+
+            drawRect(
+                color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                size = Size(
+                    this.size.width - o1.x - o2.x,
+                    size.y
+                ),
+                topLeft = Offset(
+                    o1.x + o2.x,
+                    o1.y
+                )
+            )
+
+
+            drawRect(
+                color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                size = Size(
+                    this.size.width,
+                    o1.y
+                ),
+                topLeft = Offset.Zero
+            )
+
+
+            drawRect(
+                color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                size = Size(
+                    this.size.width,
+                    this.size.height - o1.y - o2.y
+                ),
+                topLeft = Offset(
+                    0f,
+                    o1.y + o2.y
+                )
+            )
+        }
 
         Box(
             modifier = Modifier.fillMaxSize(),

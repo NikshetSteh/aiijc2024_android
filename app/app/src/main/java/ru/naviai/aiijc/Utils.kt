@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntOffset
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -19,7 +20,10 @@ class ImageRect(
     val imageOffset: IntOffset,
     val imageSize: IntOffset,
     val contentOffset: IntOffset? = null,
-    val contentSize: IntOffset? = null
+    val contentSize: IntOffset? = null,
+    val o1: Offset? = null,
+    val o2: Offset? = null,
+    val cropImageSize: IntOffset? = null,
 )
 
 

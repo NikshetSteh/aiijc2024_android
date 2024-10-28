@@ -1,6 +1,7 @@
 package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -122,6 +124,69 @@ fun LoadImage(
                         }
                     }
             )
+
+            Canvas(
+                modifier = Modifier
+                    .width(image.width.toDp())
+                    .height(image.height.toDp())
+            ) {
+                val o1 = Offset(
+                    (screenWidth.dp.toPx() - size.x) / 2f,
+                    (screenHeight.dp.toPx() * 3 / 8 - size.y / 2)
+                )
+                val o2 = Offset(
+                    size.x,
+                    size.y
+                )
+
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                    size = Size(
+                        o1.x,
+                        size.y
+                    ),
+                    topLeft = Offset(
+                        0f,
+                        o1.y
+                    )
+                )
+
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                    size = Size(
+                        this.size.width - o1.x - o2.x,
+                        size.y
+                    ),
+                    topLeft = Offset(
+                        o1.x + o2.x,
+                        o1.y
+                    )
+                )
+
+
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                    size = Size(
+                        this.size.width,
+                        o1.y
+                    ),
+                    topLeft = Offset.Zero
+                )
+
+
+                drawRect(
+                    color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                    size = Size(
+                        this.size.width,
+                        this.size.height - o1.y - o2.y
+                    ),
+                    topLeft = Offset(
+                        0f,
+                        o1.y + o2.y
+                    )
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
@@ -207,6 +272,18 @@ fun LoadImage(
                                         IntOffset(
                                             (size.x.roundToInt() / imageWidth * image.width).roundToInt(),
                                             (size.y.roundToInt() / imageHeight * image.height).roundToInt()
+                                        ),
+                                        Offset(
+                                            ((screenWidth.dp.toPx() - size.x) / 2),
+                                            (screenHeight.dp.toPx() * 3 / 8 - size.y / 2)
+                                        ),
+                                        Offset(
+                                            size.x,
+                                            size.y
+                                        ),
+                                        IntOffset(
+                                            image.width.toDp().value.roundToInt(),
+                                            image.height.toDp().value.roundToInt(),
                                         )
                                     ),
                                     type
