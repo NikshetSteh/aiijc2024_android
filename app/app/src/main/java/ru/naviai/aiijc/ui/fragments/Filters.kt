@@ -2,15 +2,23 @@ package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,152 +27,211 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ru.NaviAI.aiijc.R
+import ru.naviai.aiijc.FiltersParams
+import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.adjustBitmap
 
 
-class FiltersParams(
-    val sharpness: Float, val brightness: Float, val contrast: Float
-)
-
 @Composable
 fun Filters(
-    initialBitmap: Bitmap,
-    lastParams: FiltersParams?,
-    ready: (bitmap: Bitmap, filtersParams: FiltersParams) -> Unit,
-    back: () -> Unit
+    bitmap: Bitmap,
+    imageRect: ImageRect,
+    onReady: (filtersParams: FiltersParams) -> Unit
 ) {
-    val resource = LocalContext.current.resources
+//    var brightness by remember { mutableStateOf(0f) }
+//    var saturation by remember { mutableStateOf(1f) }
+//    var iouCoefficient by remember { mutableStateOf(0.6f) }
+//    var thresholdCoefficient by remember { mutableStateOf(0.2f) }
+//    var sharpness by remember { mutableStateOf(0f) }
 
-    val bitmap by remember {
-        mutableStateOf(initialBitmap)
-    }
-    var modifiedBitmap by remember {
-        mutableStateOf(initialBitmap)
-    }
-
-    var filtersParams by remember {
+    var currentFilters by remember {
         mutableStateOf(
-            lastParams ?: FiltersParams(0f, 0f, 1f)
+            FiltersParams(
+                brightness = 0f,
+                saturation = 1f,
+                iou = 0.6f,
+                threshold = 0.2f,
+                sharpness = 0f
+            )
         )
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceEvenly,
-        horizontalAlignment = Alignment.CenterHorizontally
+    var currentImage by remember { mutableStateOf(bitmap) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
     ) {
-
-        Image(
-            bitmap = applyFilters(bitmap, filtersParams).asImageBitmap(),
-            contentDescription = null,
+        Box(
             modifier = Modifier
-                .width(320.dp)
-                .height(320.dp),
-        )
-
-        Column(
-            modifier = Modifier.width(250.dp)
+                .fillMaxSize()
+                .offset {
+                    imageRect.imageOffset
+                },
+            contentAlignment = androidx.compose.ui.Alignment.TopCenter
         ) {
-//            Row (
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Text(resource.getString(R.string.title_sharpness))
-//                Spacer(modifier = Modifier.width(16.dp))
-//                Slider(
-//                    value = filtersParams.sharpness / 100f + 0.5f,
-//                    onValueChange = {
-//                        filtersParams =
-//                            FiltersParams(
-//                                (it - 0.5f) * 100f,
-//                                filtersParams.brightness,
-//                                filtersParams.contrast
-//                            )
-//                    }
-//                )
-//            }
-
-            Row (
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(resource.getString(R.string.title_brightness))
-                Spacer(modifier = Modifier.width(16.dp))
-                Slider(
-                    value = filtersParams.brightness / 100f + 0.5f,
-                    onValueChange = {
-                        filtersParams =
-                            FiltersParams(
-                                filtersParams.sharpness,
-                                (it - 0.5f) * 100f,
-                                filtersParams.contrast
-                            )
-                    }
-                )
-            }
-
-            Row (
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(resource.getString(R.string.title_saturation))
-                Spacer(modifier = Modifier.width(16.dp))
-                Slider(
-                    value = filtersParams.contrast / 100f + 0.5f,
-                    onValueChange = {
-                        filtersParams =
-                            FiltersParams(
-                                filtersParams.sharpness,
-                                filtersParams.brightness,
-                                (it - 0.5f) * 100f
-                            )
-                    }
-                )
-            }
+            Image(
+                currentImage.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.FillWidth
+            )
         }
+
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Button(onClick = back) {
-                Text(resource.getString(R.string.action_back))
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(
+                    Icons.Filled.Menu,
+                    contentDescription = "Menu",
+                    tint = Color.White
+                )
             }
-
-            Button(onClick = {
-                ready(modifiedBitmap, filtersParams)
-            }) {
-                Text(resource.getString(R.string.action_apply))
+            IconButton(
+                onClick = {
+                }
+            ) {
+                Icon(
+                    Icons.Filled.ExitToApp,
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
             }
         }
 
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = androidx.compose.ui.Alignment.BottomCenter
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        stringResource(R.string.title_brightness),
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize
+                    )
+                    Slider(
+                        value = (currentFilters.brightness + 100) / 200,
+                        onValueChange = {
+                            currentFilters = currentFilters.copy(brightness = it * 200 - 100)
+                        }
+                    )
 
+                    Text(
+                        stringResource(R.string.title_sharpness),
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize
+                    )
+                    Slider(
+                        value = currentFilters.sharpness / 100,
+                        onValueChange = {
+                            currentFilters = currentFilters.copy(sharpness = it * 100)
+                        }
+                    )
 
-        Button(onClick = {
-            filtersParams = FiltersParams(0f, 0f, 1f)
-        }) {
-            Text(resource.getString(R.string.action_reset))
+                    Text(
+                        stringResource(R.string.title_saturation),
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize
+                    )
+                    Slider(
+                        value = (currentFilters.saturation + 100) / 200,
+                        onValueChange = {
+                            currentFilters = currentFilters.copy(saturation = it * 200 - 100)
+                        }
+                    )
+
+                    Text(
+                        stringResource(R.string.title_threshold),
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize
+                    )
+                    Slider(
+                        value = 1 - (currentFilters.threshold - 0.05f) / 0.45f,
+                        onValueChange = {
+                            currentFilters =
+                                currentFilters.copy(threshold = (-it + 1) * 0.45f + 0.05f)
+                        }
+                    )
+
+                    Text(
+                        stringResource(R.string.title_iou),
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize
+                    )
+                    Slider(
+                        value = (currentFilters.iou - 0.35f) / 0.4f,
+                        onValueChange = {
+                            currentFilters = currentFilters.copy(iou = it * 0.4f + 0.35f)
+                        }
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Button(onClick = {
+                            currentFilters = FiltersParams(
+                                brightness = 0f,
+                                saturation = 1f,
+                                iou = 0.6f,
+                                threshold = 0.2f,
+                                sharpness = 0f
+                            )
+                        }) {
+                            Text(stringResource(R.string.action_reset))
+                        }
+                        Button(onClick = {
+                            onReady(
+                                currentFilters
+                            )
+                        }) {
+                            Text(stringResource(R.string.action_apply))
+                        }
+                    }
+                }
+            }
         }
-
     }
 
-    LaunchedEffect(filtersParams) {
-        while (true) {
-            modifiedBitmap = applyFilters(bitmap, filtersParams)
+    var timeoutJob: Job? = null
 
-            delay(3000)
+    LaunchedEffect(currentFilters) {
+        timeoutJob?.cancel()
+
+        timeoutJob = launch {
+            delay(200)
+            currentImage = adjustBitmap(
+                bitmap,
+                currentFilters.brightness,
+                currentFilters.saturation,
+                currentFilters.sharpness
+            )
         }
     }
 }
 
-fun applyFilters(
-    bitmap: Bitmap,
-    filtersParams: FiltersParams
-): Bitmap {
-    return adjustBitmap(bitmap, filtersParams.brightness, filtersParams.contrast)
-//    return applySharpeningFilter(buffer, filtersParams.sharpness)
-}
+//
+//fun applyFilters(
+//    bitmap: Bitmap,
+//    filtersParams: FiltersParams
+//): Bitmap {
+//    return adjustBitmap(bitmap, filtersParams.brightness, filtersParams.contrast)
+//}

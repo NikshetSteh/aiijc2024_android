@@ -1,45 +1,96 @@
 package ru.naviai.aiijc
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Matrix
+import android.util.Log
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntOffset
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
-fun scaleBitmapWithBlackMargins(
-    bitmap: Bitmap,
-    targetWidth: Int = 640,
-    targetHeight: Int = 640
-): Bitmap {
-    // Calculate the aspect ratio of the original bitmap
-    val aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+class ImageRect(
+    val imageOffset: IntOffset,
+    val imageSize: IntOffset,
+    val contentOffset: IntOffset? = null,
+    val contentSize: IntOffset? = null,
+    val o1: Offset? = null,
+    val o2: Offset? = null,
+    val cropImageSize: IntOffset? = null,
+    val cropZonePadding: IntOffset? = null
+)
 
-    // Determine the new dimensions while maintaining the aspect ratio
-    val (newWidth, newHeight) = if (aspectRatio > 1) {
-        // Bitmap is wider than it is tall
-        targetWidth to (targetWidth / aspectRatio).toInt()
-    } else {
-        // Bitmap is taller than it is wide or square
-        (targetHeight * aspectRatio).toInt() to targetHeight
-    }
 
-    // Create a new bitmap with the target dimensions
-    val scaledBitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+fun takePhoto(imageCapture: ImageCapture, context: Context, onCapture: (Bitmap) -> Unit) {
+    imageCapture.takePicture(
+        ContextCompat.getMainExecutor(context),
+        object : ImageCapture.OnImageCapturedCallback() {
+            override fun onCaptureSuccess(image: ImageProxy) {
+                super.onCaptureSuccess(image)
 
-    // Create a canvas to draw the scaled bitmap
-    val canvas = android.graphics.Canvas(scaledBitmap)
+                val matrix = Matrix().apply {
+                    postRotate(image.imageInfo.rotationDegrees.toFloat())
+                }
+                val bitmap = Bitmap.createBitmap(
+                    image.toBitmap(),
+                    0,
+                    0,
+                    image.width,
+                    image.height,
+                    matrix,
+                    true
+                )
 
-    // Draw the black background
-    canvas.drawColor(android.graphics.Color.BLACK)
+                onCapture(bitmap)
+            }
 
-    // Calculate the position to center the bitmap
-    val left = (targetWidth - newWidth) / 2
-    val top = (targetHeight - newHeight) / 2
-
-    // Draw the scaled bitmap onto the canvas
-    canvas.drawBitmap(
-        Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true),
-        left.toFloat(),
-        top.toFloat(),
-        null
+            override fun onError(exception: ImageCaptureException) {
+                super.onError(exception)
+                Log.e("Camera", "Couldn't take photo: ", exception)
+            }
+        }
     )
-
-    return scaledBitmap
 }
+
+
+
+fun makePrediction(
+    model: Model,
+    bitmap: Bitmap,
+    onResult: (ModelResults) -> Unit,
+    type: Model.PredictionsType,
+    iou: Float,
+    threshold: Float
+) {
+    CoroutineScope(Dispatchers.Main).launch {
+        val result = withContext(Dispatchers.IO) {
+            model.predict(
+                bitmap,
+                when (type) {
+                    Model.PredictionsType.CIRCLE -> {
+                        listOf(0)
+                    }
+
+                    Model.PredictionsType.QUAD -> {
+                        listOf(1)
+                    }
+
+                    Model.PredictionsType.RECTANGLE -> {
+                        listOf(2)
+                    }
+                },
+                iou,
+                threshold
+            )
+        }
+        onResult(result)
+    }
+}
+

@@ -38,6 +38,7 @@ import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.ui.screens.AboutScreen
 import ru.naviai.aiijc.ui.screens.MainScreen
 import ru.naviai.aiijc.ui.screens.SettingsScreen
+import ru.naviai.aiijc.ui.theme.Aiijc2024Theme
 
 enum class State {
     Main, Settings, About
@@ -45,7 +46,7 @@ enum class State {
 
 @Composable
 fun MainWindow(
-    usingLight: Boolean
+    darkTheme: Boolean
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -56,7 +57,9 @@ fun MainWindow(
         mutableStateOf(State.Main)
     }
 
+
     ModalNavigationDrawer(
+        gesturesEnabled = drawerState.isOpen,
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
@@ -72,7 +75,7 @@ fun MainWindow(
 
                 Row {
                     Image(
-                        if (usingLight) painterResource(id = R.drawable.main_icon_light) else painterResource(id = R.drawable.main_icon),
+                        if (darkTheme) painterResource(id = R.drawable.main_icon_light) else painterResource(id = R.drawable.main_icon),
                         contentDescription = "AppIcon",
                         modifier = Modifier
                             .height(128.dp)
@@ -157,7 +160,12 @@ fun MainWindow(
     )
     {
         when (state) {
-            State.Main -> MainScreen(scope, drawerState)
+            State.Main ->
+                Aiijc2024Theme(
+                    darkTheme = true
+                ) {
+                    MainScreen(scope, drawerState)
+                }
             State.Settings -> SettingsScreen {
                 state = State.Main
             }

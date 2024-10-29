@@ -2,62 +2,90 @@ package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.CameraPreview
-import ru.naviai.aiijc.scaleBitmapWithBlackMargins
+import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.takePhoto
+import ru.naviai.aiijc.ui.EditRectangle
+import ru.naviai.aiijc.ui.SelectField
+import kotlin.math.roundToInt
+
 
 @Composable
-fun PhotoTop(
-    flashLight: Boolean = false
-): ImageCapture {
-    return CameraPreview(
-        modifier = Modifier
-            .width(320.dp)
-            .height(320.dp),
-        flashLight = flashLight
-    )
-}
-
-@Composable
-fun PhotoBottom(
-    imageCapture: ImageCapture,
-    flashLight: Boolean,
-    onCapture: (Bitmap) -> Unit,
-    onFlashLight: () -> Unit
+fun Photo(
+    onMenu: () -> Unit,
+    onLoad: (Bitmap) -> Unit = {},
+    onCapture: (Bitmap, ImageRect, String) -> Unit = { _, _, _ -> },
+    startType: String
 ) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp
+    val screenWidth = configuration.screenWidthDp
+
+    val verticalPaddings = 64
+    val horizontalPaddings = 16
+
+    var isLoading by remember { mutableStateOf(false) }
+
+    var type by remember { mutableStateOf(startType) }
+
+    val height = screenHeight / 4f * 3 - verticalPaddings * 2
+    val width = screenWidth - horizontalPaddings * 2
+
+    var flashLight by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
-
-    var bitmap: Bitmap?
-
     val launcher = rememberLauncherForActivityResult(
         contract =
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        var bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             uri?.let {
-                ImageDecoder.createSource(context.contentResolver,
+                ImageDecoder.createSource(
+                    context.contentResolver,
                     it
                 )
             }?.let { ImageDecoder.decodeBitmap(it) }
@@ -65,67 +93,230 @@ fun PhotoBottom(
             @Suppress("DEPRECATION")
             MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         }
-        bitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, false)
-        bitmap = scaleBitmapWithBlackMargins(
-            bitmap!!,
-            640,
-            640
+
+        if (bitmap != null) {
+            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+
+            onLoad(bitmap!!)
+        } else {
+            isLoading = false
+        }
+    }
+
+    var sizeX: Float
+    var sizeY: Float
+
+    var size by remember {
+        mutableStateOf(Offset(0f, 0f))
+    }
+
+    with(LocalDensity.current) {
+        sizeX = LocalConfiguration.current.screenWidthDp.dp.toPx()
+        sizeY = LocalConfiguration.current.screenHeightDp.dp.toPx()
+    }
+
+    Box(
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        val imageCapture = CameraPreview(
+            modifier = Modifier.fillMaxSize(),
+            flashLight = flashLight
         )
 
-        onCapture(bitmap!!)
-    }
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            val o1 =  Offset(
+                (screenWidth.dp.toPx() - size.x) / 2f,
+                (screenHeight.dp.toPx() * 3 / 8 - size.y / 2)
+            )
+            val o2 = Offset(
+                size.x,
+                size.y
+            )
 
-    IconButton(onClick = {
-        launcher.launch("image/*")
-    }) {
-        Icon(painterResource(id = R.drawable.upload), contentDescription = "Load image")
-    }
+            drawRect(
+                color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                size = Size(
+                    o1.x,
+                    size.y
+                ),
+                topLeft = Offset(
+                    0f,
+                    o1.y
+                )
+            )
 
-    Button(
-        onClick = {
-            imageCapture.takePicture(
-                ContextCompat.getMainExecutor(context),
-                object : ImageCapture.OnImageCapturedCallback() {
-                    override fun onCaptureSuccess(image: ImageProxy) {
-                        super.onCaptureSuccess(image)
+            drawRect(
+                color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                size = Size(
+                    this.size.width - o1.x - o2.x,
+                    size.y
+                ),
+                topLeft = Offset(
+                    o1.x + o2.x,
+                    o1.y
+                )
+            )
 
-                        val matrix = Matrix().apply {
-                            postRotate(image.imageInfo.rotationDegrees.toFloat())
-                        }
-                        bitmap = Bitmap.createBitmap(
-                            image.toBitmap(),
-                            0,
-                            0,
-                            image.width,
-                            image.height,
-                            matrix,
-                            true
-                        )
-                        bitmap = scaleBitmapWithBlackMargins(
-                            bitmap!!,
-                            640,
-                            640
-                        )
 
-                        onCapture(bitmap!!)
-                    }
+            drawRect(
+                color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                size = Size(
+                    this.size.width,
+                    o1.y
+                ),
+                topLeft = Offset.Zero
+            )
 
-                    override fun onError(exception: ImageCaptureException) {
-                        super.onError(exception)
-                        Log.e("Camera", "Couldn't take photo: ", exception)
-                    }
-                }
+
+            drawRect(
+                color = Color.Black.copy(alpha = 0.5f), // Transparent black
+                size = Size(
+                    this.size.width,
+                    this.size.height - o1.y - o2.y
+                ),
+                topLeft = Offset(
+                    0f,
+                    o1.y + o2.y
+                )
             )
         }
-    ) {
-        Text(text = LocalContext.current.resources.getString(R.string.action_photo))
-    }
-    IconButton(onClick = onFlashLight) {
-        Icon(
-            painterResource(
-                id = if (flashLight) R.drawable.flashlight_on else R.drawable.flashlight_off
-            ),
-            contentDescription = "Flashlight"
-        )
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = androidx.compose.ui.Alignment.TopStart
+        ) {
+            IconButton(onClick = onMenu, enabled = !isLoading) {
+                Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
+            }
+        }
+
+        with(LocalDensity.current) {
+            Box(
+                modifier = Modifier.offset(y = (-(screenHeight / 8)).dp),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.Add,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(64.dp)
+                    )
+                }
+                size = EditRectangle(
+                    90.dp.toPx(),
+                    height.dp.toPx(),
+                    90.dp.toPx(),
+                    width.dp.toPx()
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            Column(
+                modifier = Modifier.height((screenHeight / 3).dp),
+                verticalArrangement = Arrangement.SpaceEvenly,
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            ) {
+                SelectField(
+                    modifier = Modifier.width(200.dp),
+                    label = stringResource(R.string.label_type),
+                    options = listOf(
+                        stringResource(R.string.type_circle),
+                        stringResource(R.string.type_rectangle),
+                        stringResource(R.string.type_quad),
+                    ),
+                    onChange = {
+                        type = it
+                    },
+                    value = type
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    IconButton(
+                        onClick = {
+                            isLoading = true
+                            launcher.launch("image/*")
+                        },
+                        enabled = !isLoading
+                    ) {
+                        Icon(
+                            ImageVector.vectorResource(R.drawable.upload),
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            takePhoto(imageCapture, context) {
+                                isLoading = true
+
+                                val imageHeight = it.height.toFloat()
+                                val imageWidth = sizeX * (it.height.toFloat() / sizeY)
+
+                                val cropped = Bitmap.createBitmap(
+                                    it,
+                                    ((it.width - imageWidth) / 2).roundToInt(),
+                                    0,
+                                    imageWidth.roundToInt(),
+                                    imageHeight.roundToInt()
+                                )
+
+                                val resized = Bitmap.createScaledBitmap(
+                                    cropped,
+                                    sizeX.roundToInt(),
+                                    sizeY.roundToInt(),
+                                    true
+                                )
+
+                                onCapture(
+                                    resized,
+                                    ImageRect(
+                                        IntOffset(0, 0),
+                                        IntOffset(size.x.roundToInt(), size.y.roundToInt()),
+                                    ),
+                                    type
+                                )
+                            }
+                        },
+                        enabled = !isLoading
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.ellipse),
+                            contentDescription = null,
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { flashLight = !flashLight },
+                        enabled = !isLoading
+                    ) {
+                        Icon(
+                            if (flashLight)
+                                ImageVector.vectorResource(R.drawable.flashlight_on)
+                            else
+                                ImageVector.vectorResource(R.drawable.flashlight_off),
+                            contentDescription = null,
+                            tint = Color.White,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
+

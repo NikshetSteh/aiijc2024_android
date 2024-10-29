@@ -24,7 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 fun CameraPreview(
     modifier: Modifier = Modifier,
     cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-    scaleType: PreviewView.ScaleType = PreviewView.ScaleType.FIT_CENTER,
+    scaleType: PreviewView.ScaleType = PreviewView.ScaleType.FILL_CENTER,
     flashLight: Boolean = false
 ): ImageCapture {
     val cameraView = remember {
