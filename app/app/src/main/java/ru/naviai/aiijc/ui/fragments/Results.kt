@@ -234,8 +234,8 @@ fun Results(
                     .height(bitmap.height.toDp())
                     .offset{
                         IntOffset(
-                            - imageRect.imageOffset.x,
-                            - imageRect.imageOffset.y
+                            - imageRect.imageOffset.x + if(imageRect.cropZonePadding != null) imageRect.cropZonePadding.x else 0,
+                            - imageRect.imageOffset.y + if(imageRect.cropZonePadding != null) imageRect.cropZonePadding.y else 0
                         )
                     }
             ) {

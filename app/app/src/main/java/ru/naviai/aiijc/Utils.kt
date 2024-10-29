@@ -24,6 +24,7 @@ class ImageRect(
     val o1: Offset? = null,
     val o2: Offset? = null,
     val cropImageSize: IntOffset? = null,
+    val cropZonePadding: IntOffset? = null
 )
 
 

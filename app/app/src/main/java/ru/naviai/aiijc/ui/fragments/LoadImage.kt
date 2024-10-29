@@ -1,6 +1,7 @@
 package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -127,17 +128,22 @@ fun LoadImage(
 
             Canvas(
                 modifier = Modifier
-                    .width(image.width.toDp())
-                    .height(image.height.toDp())
+                    .width(imageWidth.toDp())
+                    .height(imageHeight.toDp())
+                    .offset {
+                        IntOffset(offset.x.roundToInt(), offset.y.roundToInt())
+                    }
             ) {
                 val o1 = Offset(
-                    (screenWidth.dp.toPx() - size.x) / 2f,
-                    (screenHeight.dp.toPx() * 3 / 8 - size.y / 2)
+                    (imageWidth - size.x) / 2 - offset.x,
+                    (screenHeight.dp.toPx() * 3 / 8 - size.y / 2) - offset.y
                 )
                 val o2 = Offset(
                     size.x,
                     size.y
                 )
+
+                Log.i("kilo", "Offsets: $offset, $o1, $o2")
 
                 drawRect(
                     color = Color.Black.copy(alpha = 0.5f), // Transparent black
@@ -274,17 +280,18 @@ fun LoadImage(
                                             (size.y.roundToInt() / imageHeight * image.height).roundToInt()
                                         ),
                                         Offset(
-                                            ((screenWidth.dp.toPx() - size.x) / 2),
-                                            (screenHeight.dp.toPx() * 3 / 8 - size.y / 2)
+                                            (imageWidth - size.x) / 2 - offset.x,
+                                            (screenHeight.dp.toPx() * 3 / 8 - size.y / 2) - offset.y
                                         ),
                                         Offset(
                                             size.x,
                                             size.y
                                         ),
                                         IntOffset(
-                                            image.width.toDp().value.roundToInt(),
-                                            image.height.toDp().value.roundToInt(),
-                                        )
+                                            imageWidth.toDp().value.roundToInt(),
+                                            imageHeight.toDp().value.roundToInt(),
+                                        ),
+                                        IntOffset(offset.x.roundToInt(), offset.y.roundToInt())
                                     ),
                                     type
                                 )
