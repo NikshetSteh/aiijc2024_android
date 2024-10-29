@@ -18,7 +18,17 @@ class FiltersParams(
     val saturation: Float = 1f,
     val iou: Float = 0.6f,
     val threshold: Float = 0.2f
-)
+) {
+    fun copy(
+        sharpness: Float = this.sharpness,
+        brightness: Float = this.brightness,
+        saturation: Float = this.saturation,
+        iou: Float = this.iou,
+        threshold: Float = this.threshold
+    ): FiltersParams {
+        return FiltersParams(sharpness, brightness, saturation, iou, threshold)
+    }
+}
 
 
 fun adjustBitmap(
