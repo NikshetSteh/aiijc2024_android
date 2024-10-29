@@ -65,7 +65,9 @@ fun makePrediction(
     model: Model,
     bitmap: Bitmap,
     onResult: (ModelResults) -> Unit,
-    type: Model.PredictionsType
+    type: Model.PredictionsType,
+    iou: Float,
+    threshold: Float
 ) {
     CoroutineScope(Dispatchers.Main).launch {
         val result = withContext(Dispatchers.IO) {
@@ -83,7 +85,9 @@ fun makePrediction(
                     Model.PredictionsType.RECTANGLE -> {
                         listOf(2)
                     }
-                }
+                },
+                iou,
+                threshold
             )
         }
         onResult(result)

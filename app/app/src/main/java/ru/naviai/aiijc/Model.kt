@@ -67,7 +67,9 @@ class Model(context: Context) {
 
     fun predict(
         bitmap: Bitmap,
-        type: List<Int>
+        type: List<Int>,
+        iouThres: Float,
+        confThres: Float
     ): ModelResults {
 
         val imageTensor = TensorImageUtils.bitmapToFloat32Tensor(
@@ -88,14 +90,21 @@ class Model(context: Context) {
 
         return postprocessOutput(
             outputTensor,
-            type
+            type,
+            iouThres,
+            confThres
         )
     }
 }
 
 
-private fun postprocessOutput(tensor: Tensor, type: List<Int>): ModelResults {
-    val objects = processModelOutput(tensor, 0.6f, 0.2f, type)
+private fun postprocessOutput(
+    tensor: Tensor,
+    type: List<Int>,
+    iouThres: Float,
+    confThres: Float
+): ModelResults {
+    val objects = processModelOutput(tensor, confThres, iouThres, type)
 
     var sizeSumX = 0f
     var sizeSumY = 0f

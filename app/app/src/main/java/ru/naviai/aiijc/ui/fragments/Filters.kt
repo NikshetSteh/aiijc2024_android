@@ -1,6 +1,7 @@
 package ru.naviai.aiijc.ui.fragments
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -133,9 +134,10 @@ fun Filters(
 
                     Text(stringResource(R.string.title_threshold), fontSize = MaterialTheme.typography.bodySmall.fontSize)
                     Slider(
-                        value = (thresholdCoefficient - 0.05f) / 0.45f,
+                        value = 1-(thresholdCoefficient - 0.05f) / 0.45f,
                         onValueChange = {
-                            thresholdCoefficient = it * 0.45f + 0.05f
+                            thresholdCoefficient = (-it+1) * 0.45f + 0.05f
+                            Log.i("kilo", "$thresholdCoefficient")
                         }
                     )
 

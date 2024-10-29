@@ -175,7 +175,9 @@ fun Results(
                 else -> {
                     Model.PredictionsType.CIRCLE
                 }
-            }
+            },
+            filters.iou,
+            filters.threshold
         )
     }
 
