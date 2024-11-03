@@ -38,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -51,7 +50,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import org.opencv.android.Utils
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
@@ -59,6 +57,8 @@ import ru.naviai.aiijc.Item
 import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ModelResults
 import ru.naviai.aiijc.adjustBitmap
+import ru.naviai.aiijc.getBrightScore
+import ru.naviai.aiijc.getSharpnessScore
 import ru.naviai.aiijc.makePrediction
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.ResultsItems
@@ -88,18 +88,6 @@ fun Results(
 ) {
     var end by remember { mutableStateOf(false) }
 
-    if(!end){
-        val file = File(LocalContext.current.cacheDir, "image.jpg")
-        val out = FileOutputStream(file)
-        initialBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-        out.flush()
-        out.close()
-
-
-
-        end = true
-    }
-
 
     val bitmap by remember {
         mutableStateOf(
@@ -107,8 +95,22 @@ fun Results(
         )
     }
 
+    if(!end){
+        val file = File(LocalContext.current.cacheDir, "image.jpg")
+        val out = FileOutputStream(file)
+        initialBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        out.flush()
+        out.close()
+
+        Log.i("kilo", "Init image bright score: ${getBrightScore(initialBitmap)}")
+        Log.i("kilo", "Init image sharpness score: ${getSharpnessScore(initialBitmap)}")
+        Log.i("kilo", "Final image bright score: ${getBrightScore(bitmap)}")
+        Log.i("kilo", "Final image sharpness score: ${getSharpnessScore(bitmap)}")
+
+        end = true
+    }
+
     val screenHeight = LocalConfiguration.current.screenHeightDp
-    val screenWidth = LocalConfiguration.current.screenWidthDp
     var prediction by remember {
         mutableStateOf<ModelResults?>(null)
     }
