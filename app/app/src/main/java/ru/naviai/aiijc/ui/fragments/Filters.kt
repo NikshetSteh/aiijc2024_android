@@ -46,23 +46,19 @@ import ru.naviai.aiijc.adjustBitmap
 fun Filters(
     bitmap: Bitmap,
     imageRect: ImageRect,
-    onReady: (filtersParams: FiltersParams) -> Unit
+    onReady: (filtersParams: FiltersParams) -> Unit,
+    startFiltersParams: FiltersParams?
 ) {
-//    var brightness by remember { mutableStateOf(0f) }
-//    var saturation by remember { mutableStateOf(1f) }
-//    var iouCoefficient by remember { mutableStateOf(0.6f) }
-//    var thresholdCoefficient by remember { mutableStateOf(0.2f) }
-//    var sharpness by remember { mutableStateOf(0f) }
-
     var currentFilters by remember {
         mutableStateOf(
-            FiltersParams(
-                brightness = 0f,
-                saturation = 1f,
-                iou = 0.6f,
-                threshold = 0.2f,
-                sharpness = 0f
-            )
+            startFiltersParams
+                ?: FiltersParams(
+                    brightness = 0f,
+                    saturation = 1f,
+                    iou = 0.6f,
+                    threshold = 0.2f,
+                    sharpness = 0f
+                )
         )
     }
 
@@ -227,11 +223,3 @@ fun Filters(
         }
     }
 }
-
-//
-//fun applyFilters(
-//    bitmap: Bitmap,
-//    filtersParams: FiltersParams
-//): Bitmap {
-//    return adjustBitmap(bitmap, filtersParams.brightness, filtersParams.contrast)
-//}

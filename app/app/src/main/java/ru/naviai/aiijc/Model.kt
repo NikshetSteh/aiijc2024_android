@@ -208,6 +208,8 @@ private fun processModelOutput(
     val paddings = 7
     val size = values.size / paddings
 
+    Log.i("kilo", "Size: $size")
+
     var counter = 0
 
     for (i in 0..<(size)) {

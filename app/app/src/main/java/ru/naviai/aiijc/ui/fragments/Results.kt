@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -29,6 +31,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +53,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
@@ -88,6 +92,10 @@ fun Results(
 ) {
     var end by remember { mutableStateOf(false) }
 
+    val brightScore by remember { mutableStateOf(getBrightScore(initialBitmap)) }
+    val sharpnessScore by remember { mutableStateOf(getSharpnessScore(initialBitmap)) }
+
+    var skipWarming by remember { mutableStateOf(false) }
 
     val bitmap by remember {
         mutableStateOf(
@@ -95,17 +103,15 @@ fun Results(
         )
     }
 
-    if(!end){
+    if (!end) {
         val file = File(LocalContext.current.cacheDir, "image.jpg")
         val out = FileOutputStream(file)
         initialBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
         out.flush()
         out.close()
 
-        Log.i("kilo", "Init image bright score: ${getBrightScore(initialBitmap)}")
-        Log.i("kilo", "Init image sharpness score: ${getSharpnessScore(initialBitmap)}")
-        Log.i("kilo", "Final image bright score: ${getBrightScore(bitmap)}")
-        Log.i("kilo", "Final image sharpness score: ${getSharpnessScore(bitmap)}")
+        Log.i("kilo", "Final image bright score: $brightScore")
+        Log.i("kilo", "Final image sharpness score: $sharpnessScore")
 
         end = true
     }
@@ -207,6 +213,17 @@ fun Results(
         offset += offsetChange
     }
 
+    ImageQualityWarning(
+        brightScore < 60 && !skipWarming,
+        sharpnessScore < 500 && !skipWarming,
+        onBack = onBack,
+        onFilters = onFilters,
+        onContinue = { skipWarming = true },
+        brightScore.roundToInt(),
+        sharpnessScore.roundToInt(),
+        skipWarming
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -236,10 +253,10 @@ fun Results(
                 modifier = Modifier
                     .width(bitmap.width.toDp())
                     .height(bitmap.height.toDp())
-                    .offset{
+                    .offset {
                         IntOffset(
-                            - imageRect.imageOffset.x + if(imageRect.cropZonePadding != null) imageRect.cropZonePadding.x else 0,
-                            - imageRect.imageOffset.y + if(imageRect.cropZonePadding != null) imageRect.cropZonePadding.y else 0
+                            -imageRect.imageOffset.x + if (imageRect.cropZonePadding != null) imageRect.cropZonePadding.x else 0,
+                            -imageRect.imageOffset.y + if (imageRect.cropZonePadding != null) imageRect.cropZonePadding.y else 0
                         )
                     }
             ) {
@@ -483,3 +500,88 @@ fun Results(
     }
 }
 
+
+@Composable
+fun ImageQualityWarning(
+    isTooDark: Boolean = false,
+    isTooBlurry: Boolean = false,
+    onBack: () -> Unit = {},
+    onFilters: () -> Unit = {},
+    onContinue: () -> Unit = {},
+    brightScore: Int = 0,
+    sharpnessScore: Int = 0,
+    skipped: Boolean = false
+) {
+    if ((!isTooDark && !isTooBlurry) || skipped) {
+        return
+    }
+//    if(skipped) {
+//        return
+//    }
+
+    val text = if (isTooDark && isTooBlurry) {
+        stringResource(R.string.message_too_dark_and_too_blurry)
+    } else if (isTooBlurry) {
+        stringResource(R.string.message_too_blurry)
+    } else if(isTooDark) {
+        stringResource(R.string.message_too_dark)
+    }else {
+        "All is ok"
+    }
+
+    Dialog(onDismissRequest = { }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+//                .height(200.dp)
+                .height(350.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = text,
+                    modifier = Modifier.padding(16.dp),
+                )
+                Text(
+                    text = "Bright Score: $brightScore",
+                    modifier = Modifier.padding(16.dp)
+
+                )
+                Text(
+                    text = "Sharpness Score: $sharpnessScore",
+                    modifier = Modifier.padding(16.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    TextButton(
+                        onClick = onBack,
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text(stringResource(R.string.action_back))
+                    }
+                    TextButton(
+                        onClick = onFilters,
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text(stringResource(R.string.action_filters))
+                    }
+                    TextButton(
+                        onClick = onContinue,
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text(stringResource(R.string.action_continue))
+                    }
+                }
+            }
+        }
+    }
+}

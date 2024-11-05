@@ -43,7 +43,7 @@ fun EditRectangle(
             size = Offset(size.x, maxHeight)
         }
 
-        Log.i("kilo", "Size: {${size.x}, ${size.y}}")
+        Log.i("kilo", "Rec Size: {${size.x}, ${size.y}}")
 
         val iconOffset = -(painterResource(R.drawable.corner_1).intrinsicSize.height) / 2
 
@@ -177,6 +177,7 @@ fun MoveIcon(
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         callback(dragAmount.x, dragAmount.y)
+                        Log.i("kilo", "Move icon click")
                     }
                 }
         } else {

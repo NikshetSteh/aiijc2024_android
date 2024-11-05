@@ -142,7 +142,8 @@ fun MainScreen(
                             state = previousState
                             previousState = ScreenState.Filters
                             filters = newFilters
-                        }
+                        },
+                        filters
                     )
                 }
             }

@@ -5,7 +5,6 @@ import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
-import android.util.Log
 import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.CvType
@@ -75,15 +74,12 @@ fun adjustBitmap(
     return applySharpnessFilter(resultBitmap, sharpness.toDouble())
 }
 
-private fun JPGtoRGB888(img: Bitmap): Bitmap {
+private fun jpg2rgb888(img: Bitmap): Bitmap {
     val result: Bitmap?
     val numPixels = img.width * img.height
     val pixels = IntArray(numPixels)
-    //        get jpeg pixels, each int is the color value of one pixel
     img.getPixels(pixels, 0, img.width, 0, 0, img.width, img.height)
-    //        create bitmap in appropriate format
     result = Bitmap.createBitmap(img.width, img.height, Bitmap.Config.ARGB_8888)
-    //        Set RGB pixels
     result.setPixels(pixels, 0, result.width, 0, 0, result.width, result.height)
     return result
 }
@@ -96,7 +92,7 @@ fun applySharpnessFilter(
     val k1 = 8 * k0 + 1
     val k2 = -1 * k0
 
-    val bmp32 = JPGtoRGB888(bitmap)
+    val bmp32 = jpg2rgb888(bitmap)
 
     val sourceMat = Mat()
     Utils.bitmapToMat(bmp32, sourceMat)
@@ -135,13 +131,11 @@ fun getSharpnessScore(bitmap: Bitmap): Double {
 }
 
 fun getBrightScore(bitmap: Bitmap): Double {
-    val destination = Mat()
     val matGray = Mat()
     val sourceMatImage = Mat()
     Utils.bitmapToMat(bitmap, sourceMatImage)
     Imgproc.cvtColor(sourceMatImage, matGray, Imgproc.COLOR_BGR2HSV)
 
-    // Calculate mean
     val mean = MatOfDouble()
     val std = MatOfDouble()
     Core.meanStdDev(matGray, mean, std)

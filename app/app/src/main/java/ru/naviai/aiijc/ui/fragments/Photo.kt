@@ -5,10 +5,12 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,10 +35,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -71,6 +73,8 @@ fun Photo(
     var isLoading by remember { mutableStateOf(false) }
 
     var type by remember { mutableStateOf(startType) }
+
+    var focus by remember { mutableStateOf<Offset?>(null) }
 
     val height = screenHeight / 4f * 3 - verticalPaddings * 2
     val width = screenWidth - horizontalPaddings * 2
@@ -120,15 +124,24 @@ fun Photo(
         modifier = Modifier.fillMaxWidth()
     ) {
         val imageCapture = CameraPreview(
-            modifier = Modifier.fillMaxSize(),
-            flashLight = flashLight
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures { clickOffset ->
+                        focus = clickOffset
+                        Log.i("kilo", "Tester click")
+
+                    }
+                },
+            flashLight = flashLight,
+            focus = if (focus!= null) {val buf = focus; focus = null; buf } else null
         )
 
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            val o1 =  Offset(
+            val o1 = Offset(
                 (screenWidth.dp.toPx() - size.x) / 2f,
                 (screenHeight.dp.toPx() * 3 / 8 - size.y / 2)
             )
