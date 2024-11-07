@@ -91,7 +91,8 @@ fun Results(
     onModelLoaded: (Model) -> Unit,
     lastModel: Model?,
     onFilters: () -> Unit,
-    filters: FiltersParams
+    filters: FiltersParams,
+    needToSkipSaveFirst: Boolean
 ) {
     var end by remember { mutableStateOf(false) }
 
@@ -104,6 +105,10 @@ fun Results(
         mutableStateOf(
             adjustBitmap(initialBitmap, filters.brightness, filters.saturation, filters.sharpness)
         )
+    }
+
+    var needToSkipSave by remember {
+        mutableStateOf(needToSkipSaveFirst)
     }
 
     var currentType by remember {
@@ -205,7 +210,8 @@ fun Results(
             initialBitmap,
             context,
             filters,
-            imageRect
+            imageRect,
+            !needToSkipSave
         )
     }
 

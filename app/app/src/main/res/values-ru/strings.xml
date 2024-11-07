@@ -32,4 +32,5 @@
     <string name="message_too_dark">Изображение слишком темное. Вы можете попробовать использовать фильтры или сделать новое фото</string>
     <string name="action_close">Закрыть</string>
     <string name="type_all">Все</string>
+    <string name="label_count">Результат</string>
 </resources>

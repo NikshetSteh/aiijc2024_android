@@ -2,6 +2,7 @@ package ru.naviai.aiijc
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -19,7 +20,14 @@ data class HistoryItem(
     val modelResults: ModelResults,
     var datetime: String = "",
     val filtersParams: FiltersParams,
-    val imageRect: ImageRect
+    val imageRect: ImageRect,
+    val type: Model.PredictionsType
+)
+
+class HistoryItemCombineData(
+    val item: HistoryItem,
+    val initialBitmap: Bitmap,
+    val filteredBitmap: Bitmap
 )
 
 
@@ -33,7 +41,7 @@ fun saveResultsWithImageByDate(
 
     val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
 
-    item.datetime = currentDate + timestamp
+    item.datetime = "$currentDate $timestamp"
     Log.i("kilo", "Checking -3")
 
     val historyDir = File(context.cacheDir, "history")
@@ -44,7 +52,7 @@ fun saveResultsWithImageByDate(
 
     val imageInitialFile = File(
         context.cacheDir,
-        "history/${item.datetime}_${timestamp}_initial.png"
+        "history/${item.datetime}_initial.png"
     )
     Log.i("kilo", "Checking -1")
     FileOutputStream(imageInitialFile).use { out ->
@@ -53,7 +61,7 @@ fun saveResultsWithImageByDate(
     Log.i("kilo", "Checking 0")
     val imageFilteredFile = File(
         context.cacheDir,
-        "history/${item.datetime}_${timestamp}_filtered.png"
+        "history/${item.datetime}_filtered.png"
     )
     Log.i("kilo", "Checking 1")
     FileOutputStream(imageFilteredFile).use { out ->
@@ -64,23 +72,52 @@ fun saveResultsWithImageByDate(
 
     val resultsFile = File(
         context.cacheDir,
-        "history/${item.datetime}_$timestamp.ser"
+        "history/${item.datetime} $timestamp.ser"
     )
     FileWriter(resultsFile).use { writer ->
         writer.write(Json.encodeToString(item))
     }
 }
 
-fun loadHistory(context: Context): MutableList<HistoryItem> {
+fun loadHistory(context: Context): MutableList<HistoryItemCombineData> {
     val historyDir = File(context.cacheDir, "history")
-    val resultsList = mutableListOf<HistoryItem>()
+    val resultsList = mutableListOf<HistoryItemCombineData>()
 
     if (historyDir.exists() && historyDir.isDirectory) {
         historyDir.listFiles()?.forEach { file ->
             if (file.extension == "ser") {
+                var item: HistoryItem?
                 FileReader(file).use { reader ->
-                    resultsList.add(Json.decodeFromString(reader.readText()))
+                    item = Json.decodeFromString(reader.readText())
                 }
+
+                Log.i(
+                    "kilo", File(
+                        context.cacheDir,
+                        "history/${item?.datetime}_initial.png"
+                    ).absolutePath
+                )
+
+                val initialBitmap = BitmapFactory.decodeFile(
+                    File(
+                        context.cacheDir,
+                        "history/${item?.datetime}_initial.png"
+                    ).absolutePath
+                )
+                val filteredBitmap = BitmapFactory.decodeFile(
+                    File(
+                        context.cacheDir,
+                        "history/${item?.datetime}_filtered.png"
+                    ).absolutePath
+                )
+
+                resultsList.add(
+                    HistoryItemCombineData(
+                        item = item!!,
+                        initialBitmap = initialBitmap!!,
+                        filteredBitmap = filteredBitmap!!
+                    )
+                )
             }
         }
     }

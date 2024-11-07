@@ -62,7 +62,6 @@ fun takePhoto(imageCapture: ImageCapture, context: Context, onCapture: (Bitmap) 
 }
 
 
-
 fun makePrediction(
     model: Model,
     bitmap: Bitmap,
@@ -73,7 +72,8 @@ fun makePrediction(
     initialBitmap: Bitmap = bitmap,
     context: Context,
     filters: FiltersParams,
-    imageRect: ImageRect
+    imageRect: ImageRect,
+    needSave: Boolean
 ) {
     CoroutineScope(Dispatchers.Main).launch {
         val result = withContext(Dispatchers.IO) {
@@ -87,6 +87,7 @@ fun makePrediction(
                     Model.PredictionsType.RECTANGLE -> {
                         listOf(1)
                     }
+
                     Model.PredictionsType.ALL -> {
                         listOf(0, 1)
                     }
@@ -99,16 +100,19 @@ fun makePrediction(
 
         Log.i("kilo", "Start saving")
 
-        saveResultsWithImageByDate(
-            context = context,
-            initialBitmap = initialBitmap,
-            filteredBitmap = bitmap,
-            item = HistoryItem(
-                modelResults = result,
-                filtersParams = filters,
-                imageRect = imageRect
+        if (needSave) {
+            saveResultsWithImageByDate(
+                context = context,
+                initialBitmap = initialBitmap,
+                filteredBitmap = bitmap,
+                item = HistoryItem(
+                    modelResults = result,
+                    filtersParams = filters,
+                    imageRect = imageRect,
+                    type = type
+                )
             )
-        )
+        }
 
         Log.i("kilo", "saved")
         onResult(result)
@@ -117,13 +121,13 @@ fun makePrediction(
 
 
 @Serializable
-class IntOffsetSerializable (
+class IntOffsetSerializable(
     var x: Int,
     var y: Int,
 )
 
 @Serializable
-class OffsetSerializable (
+class OffsetSerializable(
     var x: Float,
     var y: Float,
 )
@@ -131,3 +135,4 @@ class OffsetSerializable (
 fun OffsetSerializable.toOffset() = Offset(x, y)
 fun IntOffsetSerializable.toOffset() = IntOffset(x, y)
 fun IntOffset.toSerializable() = IntOffsetSerializable(x, y)
+fun Offset.toSerializable() = OffsetSerializable(x, y)

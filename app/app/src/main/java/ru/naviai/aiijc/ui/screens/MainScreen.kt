@@ -27,7 +27,7 @@ import ru.naviai.aiijc.ui.fragments.Photo
 import ru.naviai.aiijc.ui.fragments.Results
 
 enum class ScreenState {
-    Camera, LoadImage, Results, Filters
+    Camera, LoadImage, Results, Filters, History
 }
 
 @Composable
@@ -53,6 +53,7 @@ fun MainScreen(
     var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var initialBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var filters by remember { mutableStateOf(FiltersParams()) }
+    var needSkipSave by remember { mutableStateOf(false) }
 
     var imageRect by remember {
         mutableStateOf(
@@ -66,6 +67,8 @@ fun MainScreen(
     var type by remember {
         mutableStateOf(resources.getString(R.string.type_circle))
     }
+
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -95,7 +98,11 @@ fun MainScreen(
                         imageRect = rect
                         type = newType
                     },
-                    startType = type
+                    startType = type,
+                    onHistory = {
+                        state = ScreenState.History
+                        type = it
+                    }
                 )
             }
 
@@ -130,16 +137,19 @@ fun MainScreen(
                         imageRect = imageRect,
                         initialType = type,
                         onBack = {
+                            needSkipSave = false
                             previousState = state
                             state = ScreenState.Camera
                         },
                         lastModel = model,
                         onModelLoaded = { newModel -> model = newModel },
                         onFilters = {
+                            needSkipSave = false
                             previousState = state
                             state = ScreenState.Filters
                         },
-                        filters = filters
+                        filters = filters,
+                        needToSkipSaveFirst = needSkipSave
                     )
                 }
             }
@@ -157,6 +167,35 @@ fun MainScreen(
                         filters
                     )
                 }
+            }
+
+            ScreenState.History -> {
+                History(
+                    onLoad = { initialBitmapLoad, filtersParamsLoad, imageRectLoad, typeLoad ->
+                        needSkipSave = true
+                        previousState = state
+                        state = ScreenState.Results
+                        initialBitmap = initialBitmapLoad
+                        currentBitmap = initialBitmap
+                        filters = filtersParamsLoad
+                        imageRect = imageRectLoad
+                        type = when (typeLoad) {
+                            Model.PredictionsType.ALL -> context.resources.getString(
+                                R.string.type_all
+                            )
+                            Model.PredictionsType.CIRCLE -> context.resources.getString(
+                                R.string.type_circle
+                            )
+                            Model.PredictionsType.RECTANGLE -> context.resources.getString(
+                                R.string.type_rectangle
+                            )
+                        }
+                    },
+                    onBack = {
+                        state = previousState
+                        previousState = ScreenState.History
+                    }
+                )
             }
         }
     }

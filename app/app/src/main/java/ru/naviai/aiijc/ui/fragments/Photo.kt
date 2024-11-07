@@ -50,7 +50,6 @@ import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.CameraPreview
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.IntOffsetSerializable
-import ru.naviai.aiijc.loadHistory
 import ru.naviai.aiijc.takePhoto
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.SelectField
@@ -62,7 +61,8 @@ fun Photo(
     onMenu: () -> Unit,
     onLoad: (Bitmap, String) -> Unit = { _, _ -> },
     onCapture: (Bitmap, ImageRect, String) -> Unit = { _, _, _ -> },
-    startType: String
+    startType: String,
+    onHistory: (String) -> Unit,
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
@@ -83,8 +83,6 @@ fun Photo(
     var flashLight by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-
-    loadHistory(context)
 
     val launcher = rememberLauncherForActivityResult(
         contract =
@@ -138,7 +136,9 @@ fun Photo(
                     }
                 },
             flashLight = flashLight,
-            focus = if (focus!= null) {val buf = focus; focus = null; buf } else null
+            focus = if (focus != null) {
+                val buf = focus; focus = null; buf
+            } else null
         )
 
         Canvas(
@@ -206,7 +206,7 @@ fun Photo(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = androidx.compose.ui.Alignment.TopStart
         ) {
-            Row (
+            Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -222,9 +222,7 @@ fun Photo(
                 }
 
                 IconButton(
-                    onClick = {
-                    flashLight = !flashLight
-                },
+                    onClick = { onHistory(type) },
                     enabled = !isLoading
                 ) {
                     Icon(
@@ -329,7 +327,10 @@ fun Photo(
                                     resized,
                                     ImageRect(
                                         IntOffsetSerializable(0, 0),
-                                        IntOffsetSerializable(size.x.roundToInt(), size.y.roundToInt()),
+                                        IntOffsetSerializable(
+                                            size.x.roundToInt(),
+                                            size.y.roundToInt()
+                                        ),
                                     ),
                                     type
                                 )
