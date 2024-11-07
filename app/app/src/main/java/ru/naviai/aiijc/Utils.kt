@@ -87,6 +87,9 @@ fun makePrediction(
                     Model.PredictionsType.RECTANGLE -> {
                         listOf(1)
                     }
+                    Model.PredictionsType.ALL -> {
+                        listOf(0, 1)
+                    }
                 },
                 iou,
                 threshold

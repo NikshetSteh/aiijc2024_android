@@ -128,7 +128,7 @@ fun MainScreen(
                     Results(
                         it,
                         imageRect = imageRect,
-                        type = type,
+                        initialType = type,
                         onBack = {
                             previousState = state
                             state = ScreenState.Camera

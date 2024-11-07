@@ -276,6 +276,7 @@ fun Photo(
                     options = listOf(
                         stringResource(R.string.type_circle),
                         stringResource(R.string.type_rectangle),
+                        stringResource(R.string.type_all),
                     ),
                     onChange = {
                         type = it

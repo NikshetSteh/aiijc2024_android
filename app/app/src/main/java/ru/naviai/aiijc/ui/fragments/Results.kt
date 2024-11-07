@@ -68,6 +68,7 @@ import ru.naviai.aiijc.makePrediction
 import ru.naviai.aiijc.toOffset
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.ResultsItems
+import ru.naviai.aiijc.ui.SelectField
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.max
@@ -85,7 +86,7 @@ enum class Mode {
 fun Results(
     initialBitmap: Bitmap,
     imageRect: ImageRect,
-    type: String,
+    initialType: String,
     onBack: () -> Unit,
     onModelLoaded: (Model) -> Unit,
     lastModel: Model?,
@@ -103,6 +104,10 @@ fun Results(
         mutableStateOf(
             adjustBitmap(initialBitmap, filters.brightness, filters.saturation, filters.sharpness)
         )
+    }
+
+    var currentType by remember {
+        mutableStateOf(initialType)
     }
 
     val screenHeight = LocalConfiguration.current.screenHeightDp
@@ -137,6 +142,7 @@ fun Results(
     }
 
     if (needPrediction && model != null) {
+        isLoading = true
         val cropped: Bitmap
         if (imageRect.contentOffset == null) {
             cropped = Bitmap.createBitmap(
@@ -171,7 +177,7 @@ fun Results(
                 isLoading = false
                 prediction = it
             },
-            when (type) {
+            when (currentType) {
                 stringResource(R.string.type_circle) -> {
                     Model.PredictionsType.CIRCLE
                 }
@@ -180,8 +186,12 @@ fun Results(
                     Model.PredictionsType.RECTANGLE
                 }
 
+                stringResource(R.string.type_all) -> {
+                    Model.PredictionsType.ALL
+                }
+
                 else -> {
-                    Model.PredictionsType.CIRCLE
+                    Model.PredictionsType.ALL
                 }
             },
             filters.iou,
@@ -214,7 +224,7 @@ fun Results(
     var offset by remember { mutableStateOf(Offset.Zero) }
     val state = rememberTransformableState { zoomChange, offsetChange, _ ->
         scale = max(min(scale * zoomChange, 3f), 1f)
-        offset += offsetChange
+        offset += offsetChange * scale
     }
 
     ImageQualityWarning(
@@ -223,8 +233,6 @@ fun Results(
         onBack = onBack,
         onFilters = onFilters,
         onContinue = { skipWarming = true },
-        brightScore.roundToInt(),
-        sharpnessScore.roundToInt(),
         skipWarming
     )
 
@@ -388,7 +396,7 @@ fun Results(
                                     prediction!!.meanSize
                                 )
                             },
-                            isRectangle = type == stringResource(R.string.type_rectangle)
+                            isRectangle = currentType == stringResource(R.string.type_rectangle)
                         )
                     }
 
@@ -436,6 +444,20 @@ fun Results(
                             .width(64.dp)
                     )
                 } else {
+                    SelectField(
+                        modifier = Modifier.width(200.dp),
+                        label = stringResource(R.string.label_type),
+                        options = listOf(
+                            stringResource(R.string.type_circle),
+                            stringResource(R.string.type_rectangle),
+                            stringResource(R.string.type_all),
+                        ),
+                        onChange = {
+                            currentType = it
+                            needPrediction = true
+                        },
+                        value = currentType
+                    )
                     Row {
                         IconButton(onClick = {
                             mode = if (mode != Mode.DELETE) {
@@ -510,8 +532,6 @@ fun ImageQualityWarning(
     onBack: () -> Unit = {},
     onFilters: () -> Unit = {},
     onContinue: () -> Unit = {},
-    brightScore: Int = 0,
-    sharpnessScore: Int = 0,
     skipped: Boolean = false
 ) {
     if ((!isTooDark && !isTooBlurry) || skipped) {
@@ -544,15 +564,6 @@ fun ImageQualityWarning(
                     text = text,
                     modifier = Modifier.padding(16.dp),
                 )
-//                Text(
-//                    text = "Bright Score: $brightScore",
-//                    modifier = Modifier.padding(16.dp)
-//
-//                )
-//                Text(
-//                    text = "Sharpness Score: $sharpnessScore",
-//                    modifier = Modifier.padding(16.dp)
-//                )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),

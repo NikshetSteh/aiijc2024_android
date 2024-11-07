@@ -52,7 +52,8 @@ class Item(
 class Model(context: Context) {
     enum class PredictionsType {
         CIRCLE,
-        RECTANGLE
+        RECTANGLE,
+        ALL
     }
 
 
