@@ -120,7 +120,9 @@ fun Results(
     var modelLoaded by remember { mutableStateOf(false) }
 
     var needPrediction by remember { mutableStateOf(true) }
-    var isLoading by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(brightScore >= 60 && sharpnessScore >= 500) }
+
+    Log.i("kilo", "Is loading: $isLoading")
 
     var mode by remember {
         mutableStateOf(Mode.NONE)
@@ -141,7 +143,11 @@ fun Results(
         end = true
     }
 
-    if (needPrediction && model != null) {
+    if (
+        needPrediction &&
+        model != null &&
+        (skipWarming || (brightScore >= 60 && sharpnessScore >= 500))
+    ) {
         isLoading = true
         val cropped: Bitmap
         if (imageRect.contentOffset == null) {
@@ -232,7 +238,7 @@ fun Results(
         sharpnessScore < 500 && !skipWarming,
         onBack = onBack,
         onFilters = onFilters,
-        onContinue = { skipWarming = true },
+        onContinue = { skipWarming = true; isLoading = true },
         skipWarming
     )
 
@@ -443,7 +449,7 @@ fun Results(
                             .height(64.dp)
                             .width(64.dp)
                     )
-                } else {
+                } else if (prediction != null) {
                     SelectField(
                         modifier = Modifier.width(200.dp),
                         label = stringResource(R.string.label_type),
