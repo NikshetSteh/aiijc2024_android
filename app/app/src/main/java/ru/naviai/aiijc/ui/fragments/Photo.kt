@@ -60,7 +60,7 @@ import kotlin.math.roundToInt
 @Composable
 fun Photo(
     onMenu: () -> Unit,
-    onLoad: (Bitmap) -> Unit = {},
+    onLoad: (Bitmap, String) -> Unit = { _, _ -> },
     onCapture: (Bitmap, ImageRect, String) -> Unit = { _, _, _ -> },
     startType: String
 ) {
@@ -105,7 +105,7 @@ fun Photo(
         if (bitmap != null) {
             bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
 
-            onLoad(bitmap!!)
+            onLoad(bitmap!!, type)
         } else {
             isLoading = false
         }
@@ -208,6 +208,7 @@ fun Photo(
         ) {
             Row (
                 horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 IconButton(
                     onClick = onMenu,

@@ -56,7 +56,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
-import ru.naviai.aiijc.HistoryItem
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.IntOffsetSerializable
 import ru.naviai.aiijc.Item
@@ -66,7 +65,6 @@ import ru.naviai.aiijc.adjustBitmap
 import ru.naviai.aiijc.getBrightScore
 import ru.naviai.aiijc.getSharpnessScore
 import ru.naviai.aiijc.makePrediction
-import ru.naviai.aiijc.saveResultsWithImageByDate
 import ru.naviai.aiijc.toOffset
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.ResultsItems
@@ -172,17 +170,6 @@ fun Results(
             onResult = {
                 isLoading = false
                 prediction = it
-
-                saveResultsWithImageByDate(
-                    context = context,
-                    initialBitmap = initialBitmap,
-                    filteredBitmap = bitmap,
-                    item = HistoryItem(
-                        modelResults = prediction!!,
-                        filtersParams = filters,
-                        imageRect = imageRect
-                    )
-                )
             },
             when (type) {
                 stringResource(R.string.type_circle) -> {
@@ -198,7 +185,11 @@ fun Results(
                 }
             },
             filters.iou,
-            filters.threshold
+            filters.threshold,
+            initialBitmap,
+            context,
+            filters,
+            imageRect
         )
     }
 
@@ -583,7 +574,7 @@ fun ImageQualityWarning(
                         onClick = onContinue,
                         modifier = Modifier.padding(8.dp),
                     ) {
-                        Text(stringResource(R.string.action_continue))
+                        Text(stringResource(R.string.action_close))
                     }
                 }
             }

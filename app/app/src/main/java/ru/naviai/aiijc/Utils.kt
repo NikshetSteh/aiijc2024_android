@@ -15,13 +15,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import java.io.File
-import java.io.FileOutputStream
-import java.io.FileWriter
-import java.text.SimpleDateFormat
-import java.util.*
 
 
 @Serializable
@@ -76,7 +69,11 @@ fun makePrediction(
     onResult: (ModelResults) -> Unit,
     type: Model.PredictionsType,
     iou: Float,
-    threshold: Float
+    threshold: Float,
+    initialBitmap: Bitmap = bitmap,
+    context: Context,
+    filters: FiltersParams,
+    imageRect: ImageRect
 ) {
     CoroutineScope(Dispatchers.Main).launch {
         val result = withContext(Dispatchers.IO) {
@@ -95,6 +92,22 @@ fun makePrediction(
                 threshold
             )
         }
+
+
+        Log.i("kilo", "Start saving")
+
+        saveResultsWithImageByDate(
+            context = context,
+            initialBitmap = initialBitmap,
+            filteredBitmap = bitmap,
+            item = HistoryItem(
+                modelResults = result,
+                filtersParams = filters,
+                imageRect = imageRect
+            )
+        )
+
+        Log.i("kilo", "saved")
         onResult(result)
     }
 }

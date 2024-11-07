@@ -37,7 +37,7 @@ fun MainScreen(
 ) {
     var opencvLoaded by remember { mutableStateOf(false) }
 
-    if(!opencvLoaded) {
+    if (!opencvLoaded) {
         if (OpenCVLoader.initLocal()) {
             Log.i("kilo", "OpenCV loaded")
             opencvLoaded = true
@@ -54,9 +54,13 @@ fun MainScreen(
     var initialBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var filters by remember { mutableStateOf(FiltersParams()) }
 
-    var imageRect by remember { mutableStateOf(ImageRect(
-        IntOffset.Zero.toSerializable(), IntOffset.Zero.toSerializable())
-    ) }
+    var imageRect by remember {
+        mutableStateOf(
+            ImageRect(
+                IntOffset.Zero.toSerializable(), IntOffset.Zero.toSerializable()
+            )
+        )
+    }
     var model by remember { mutableStateOf<Model?>(null) }
 
     var type by remember {
@@ -76,11 +80,12 @@ fun MainScreen(
                             }
                         }
                     },
-                    onLoad = {
+                    onLoad = { bitmap, newType ->
                         previousState = ScreenState.Camera
                         state = ScreenState.LoadImage
-                        currentBitmap = it
-                        initialBitmap = it
+                        currentBitmap = bitmap
+                        initialBitmap = bitmap
+                        type = newType
                     },
                     onCapture = { bitmap, rect, newType ->
                         previousState = ScreenState.Camera
@@ -105,7 +110,10 @@ fun MainScreen(
                         imageRect = rect
                         type = newType
                     },
-                    onBack = { state = ScreenState.Camera },
+                    onBack = {
+                        state = ScreenState.Camera
+                        type = it
+                    },
                     startType = type,
                     filters = filters,
                     onFilters = {

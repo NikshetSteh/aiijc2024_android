@@ -55,7 +55,7 @@ import kotlin.math.roundToInt
 fun LoadImage(
     initialBitmap: Bitmap,
     onReady: (Bitmap, ImageRect, String) -> Unit,
-    onBack: () -> Unit,
+    onBack: (String) -> Unit,
     onFilters: () -> Unit,
     startType: String,
     filters: FiltersParams
@@ -194,19 +194,6 @@ fun LoadImage(
                     )
                 )
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        Icons.Filled.ExitToApp,
-                        contentDescription = null,
-                        tint = Color.White
-                    )
-                }
-            }
         }
 
         Box(
@@ -308,12 +295,20 @@ fun LoadImage(
 
                         Box(
                             modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.CenterEnd
+                            contentAlignment = Alignment.Center
                         ) {
                             Row(
-                                modifier = Modifier.width((screenWidth / 2).dp),
-                                horizontalArrangement = Arrangement.Center
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceAround
                             ) {
+                                IconButton(onClick = {onBack(type)}) {
+                                    Icon(
+                                        Icons.Filled.ExitToApp,
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+                                }
+
                                 IconButton(onClick = onFilters) {
                                     Image(
                                         painter = painterResource(R.drawable.tune),
