@@ -99,48 +99,6 @@ fun makePrediction(
     }
 }
 
-@Serializable
-data class HistoryItem(
-    val modelResults: ModelResults,
-    var date: String = "",
-    var time: String = "",
-    val filtersParams: FiltersParams,
-    val imageRect: ImageRect
-)
-
-
-fun saveResultsWithImageByDate(
-    context: Context,
-    item: HistoryItem,
-    initialBitmap: Bitmap,
-    filteredBitmap: Bitmap
-) {
-    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-    val dateDir = File(context.cacheDir, currentDate)
-
-    if (!dateDir.exists()) {
-        dateDir.mkdirs()
-    }
-
-    val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-
-    item.date = currentDate
-    item.time = timestamp
-
-    val imageInitialFile = File(dateDir, "${timestamp}_initial.png")
-    FileOutputStream(imageInitialFile).use { out ->
-        initialBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-    }
-    val imageFilteredFile = File(dateDir, "${timestamp}_filtered.png")
-    FileOutputStream(imageFilteredFile).use { out ->
-        filteredBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-    }
-
-    val resultsFile = File(dateDir, "$timestamp.ser")
-    FileWriter(resultsFile).use { writer ->
-        writer.write(Json.encodeToString(item))
-    }
-}
 
 @Serializable
 class IntOffsetSerializable (

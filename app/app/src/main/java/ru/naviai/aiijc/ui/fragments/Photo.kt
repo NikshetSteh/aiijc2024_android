@@ -50,6 +50,7 @@ import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.CameraPreview
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.IntOffsetSerializable
+import ru.naviai.aiijc.loadHistory
 import ru.naviai.aiijc.takePhoto
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.SelectField
@@ -82,6 +83,9 @@ fun Photo(
     var flashLight by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
+    loadHistory(context)
+
     val launcher = rememberLauncherForActivityResult(
         contract =
         ActivityResultContracts.GetContent()
@@ -202,8 +206,32 @@ fun Photo(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = androidx.compose.ui.Alignment.TopStart
         ) {
-            IconButton(onClick = onMenu, enabled = !isLoading) {
-                Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
+            Row (
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                IconButton(
+                    onClick = onMenu,
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        Icons.Filled.Menu,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                    flashLight = !flashLight
+                },
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.history),
+                        contentDescription = "History",
+                        tint = Color.White
+                    )
+                }
             }
         }
 
