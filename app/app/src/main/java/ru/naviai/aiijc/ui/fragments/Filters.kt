@@ -150,9 +150,9 @@ fun Filters(
                         fontSize = MaterialTheme.typography.bodySmall.fontSize
                     )
                     Slider(
-                        value = (currentFilters.saturation + 100) / 200,
+                        value = currentFilters.saturation / 7,
                         onValueChange = {
-                            currentFilters = currentFilters.copy(saturation = it * 200 - 100)
+                            currentFilters = currentFilters.copy(saturation = it * 7)
                         }
                     )
 

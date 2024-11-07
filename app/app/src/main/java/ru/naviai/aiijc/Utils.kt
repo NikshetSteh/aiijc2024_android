@@ -78,12 +78,8 @@ fun makePrediction(
                         listOf(0)
                     }
 
-                    Model.PredictionsType.QUAD -> {
-                        listOf(1)
-                    }
-
                     Model.PredictionsType.RECTANGLE -> {
-                        listOf(2)
+                        listOf(1)
                     }
                 },
                 iou,

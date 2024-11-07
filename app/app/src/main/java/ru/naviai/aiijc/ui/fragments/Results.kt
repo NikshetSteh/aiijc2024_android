@@ -176,10 +176,6 @@ fun Results(
                     Model.PredictionsType.RECTANGLE
                 }
 
-                stringResource(R.string.type_quad) -> {
-                    Model.PredictionsType.QUAD
-                }
-
                 else -> {
                     Model.PredictionsType.CIRCLE
                 }
@@ -384,9 +380,7 @@ fun Results(
                                     prediction!!.meanSize
                                 )
                             },
-                            isRectangle = type == stringResource(R.string.type_rectangle) || type == stringResource(
-                                R.string.type_quad
-                            )
+                            isRectangle = type == stringResource(R.string.type_rectangle)
                         )
                     }
 
@@ -515,26 +509,20 @@ fun ImageQualityWarning(
     if ((!isTooDark && !isTooBlurry) || skipped) {
         return
     }
-//    if(skipped) {
-//        return
-//    }
 
     val text = if (isTooDark && isTooBlurry) {
         stringResource(R.string.message_too_dark_and_too_blurry)
     } else if (isTooBlurry) {
         stringResource(R.string.message_too_blurry)
-    } else if(isTooDark) {
+    } else {
         stringResource(R.string.message_too_dark)
-    }else {
-        "All is ok"
     }
 
     Dialog(onDismissRequest = { }) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-//                .height(200.dp)
-                .height(350.dp)
+                .height(250.dp)
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
@@ -548,15 +536,15 @@ fun ImageQualityWarning(
                     text = text,
                     modifier = Modifier.padding(16.dp),
                 )
-                Text(
-                    text = "Bright Score: $brightScore",
-                    modifier = Modifier.padding(16.dp)
-
-                )
-                Text(
-                    text = "Sharpness Score: $sharpnessScore",
-                    modifier = Modifier.padding(16.dp)
-                )
+//                Text(
+//                    text = "Bright Score: $brightScore",
+//                    modifier = Modifier.padding(16.dp)
+//
+//                )
+//                Text(
+//                    text = "Sharpness Score: $sharpnessScore",
+//                    modifier = Modifier.padding(16.dp)
+//                )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),

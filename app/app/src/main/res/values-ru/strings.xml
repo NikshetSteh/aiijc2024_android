@@ -17,7 +17,6 @@
     <string name="action_reload">Обновить</string>
     <string name="action_new_image">Заново</string>
     <string name="type_rectangle">Прямоугольный</string>
-    <string name="type_quad">Квадратный</string>
     <string name="toast_saved">"Изменения вступят в силу после перезапуска"</string>
     <string name="title_sharpness">Резкость:</string>
     <string name="title_saturation">Насыщенность:</string>

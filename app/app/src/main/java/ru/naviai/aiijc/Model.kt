@@ -51,18 +51,14 @@ class Item(
 class Model(context: Context) {
     enum class PredictionsType {
         CIRCLE,
-        RECTANGLE,
-        QUAD
+        RECTANGLE
     }
 
 
     private val model: Module
-//    private val roundModel: Module
 
     init {
-//        roundModel = Module.load(assetFilePath(context, "uv.ptl"))
-//        model = Module.load(assetFilePath(context, "b.torchscript"))
-        model = Module.load(assetFilePath(context, "b2.torchscript"))
+        model = Module.load(assetFilePath(context, "segmenter.torchscript"))
     }
 
     fun predict(
@@ -79,14 +75,9 @@ class Model(context: Context) {
         )
 
         val inputValues = IValue.from(imageTensor)
-//        val output: IValue = if (type.size == 1 && type[0] == 0) {
-//            roundModel.forward(inputValues)
-//        } else {
-//            model.forward(inputValues)
-//        }
+
         val output: IValue = model.forward(inputValues)
-//        val outputTensor = if(type.size == 1 && type[0] == 0) output.toTuple()[0].toTensor() else output.toTensor()
-        val outputTensor = output.toTensor()
+        val outputTensor = output.toTuple()[0].toTensor()
 
         return postprocessOutput(
             outputTensor,
@@ -204,11 +195,11 @@ private fun processModelOutput(
 
     val values = tensor.dataAsFloatArray
 
-//    val paddings = if (ids.size > 1 || ids[0] != 0) 7 else 6
-    val paddings = 7
+    val paddings = 38
     val size = values.size / paddings
 
     Log.i("kilo", "Size: $size")
+    Log.i("kilo", "Values Size: ${values.size}")
 
     var counter = 0
 
@@ -223,11 +214,6 @@ private fun processModelOutput(
             }
         }
 
-//        val conf: Float = if (ids.size == 1 && ids[0] == 0) {
-//            values[i * 6 + 5] * values[i * 6 + 4]
-//        }else {
-//            values[i + (4 + resultClass) * size]
-//        }
         val conf: Float = values[i + (4 + resultClass) * size]
 
         if (conf < confThres) continue

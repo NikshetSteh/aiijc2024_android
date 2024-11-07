@@ -3,6 +3,7 @@ package ru.naviai.aiijc.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
@@ -16,11 +17,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import ru.naviai.aiijc.Item
 import ru.naviai.aiijc.ui.fragments.Mode
+import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 
@@ -84,7 +88,7 @@ fun ResultItem(
             }
             Text(
                 text = title,
-                fontSize = (0.16 * fontSize).sp
+                fontSize = (0.16 * fontSize * 0.7.pow(max(title.length - 2, 0))).sp
             )
         }
     }
@@ -147,5 +151,25 @@ fun ResultsItems(
                 color=colors[counter % colors.size]
             )
         }
+    }
+}
+
+
+@Preview
+@Composable
+fun ResultItemPreview() {
+    Box (
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        val k = 20f
+        ResultItem(
+            title = "100000",
+            size = Offset(k, k),
+            fontSize = k,
+            color = Color(240, 128, 128),
+            useBox = true
+        )
     }
 }
