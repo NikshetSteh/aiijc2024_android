@@ -192,7 +192,7 @@ fun MainScreen(
                         }
                     },
                     onBack = {
-                        state = previousState
+                        state = ScreenState.Camera
                         previousState = ScreenState.History
                     }
                 )
