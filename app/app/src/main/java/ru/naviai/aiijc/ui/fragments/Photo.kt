@@ -45,11 +45,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.CameraPreview
 import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.IntOffsetSerializable
 import ru.naviai.aiijc.takePhoto
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.SelectField
@@ -298,8 +298,8 @@ fun Photo(
                                 onCapture(
                                     resized,
                                     ImageRect(
-                                        IntOffset(0, 0),
-                                        IntOffset(size.x.roundToInt(), size.y.roundToInt()),
+                                        IntOffsetSerializable(0, 0),
+                                        IntOffsetSerializable(size.x.roundToInt(), size.y.roundToInt()),
                                     ),
                                     type
                                 )

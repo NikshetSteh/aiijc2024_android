@@ -3,8 +3,7 @@ package ru.naviai.aiijc
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.IntOffset
+import kotlinx.serialization.Serializable
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
@@ -36,15 +35,17 @@ fun assetFilePath(context: Context, assetName: String?): String? {
 }
 
 
-class ModelResults(
+@Serializable
+data class ModelResults(
     val count: Int,
     val items: List<Item>,
-    val meanSize: Offset,
+    val meanSize: OffsetSerializable,
 )
 
 
+@Serializable
 class Item(
-    val offset: IntOffset
+    val offset: IntOffsetSerializable
 )
 
 
@@ -104,7 +105,7 @@ private fun postprocessOutput(
         sizeSumX += abs(it[2] - it[0])
         sizeSumY += abs(it[3] - it[1])
         Item(
-            IntOffset(
+            IntOffsetSerializable(
                 ((it[0] + it[2]) / 2).roundToInt(),
                 ((it[1] + it[3]) / 2).roundToInt()
             )
@@ -115,12 +116,12 @@ private fun postprocessOutput(
         objects.size,
         items,
         if (objects.isNotEmpty())
-            Offset(
+            OffsetSerializable(
                 sizeSumX / objects.size,
                 sizeSumY / objects.size
             )
         else
-            Offset(40f, 40f)
+            OffsetSerializable(40f, 40f)
     )
 }
 

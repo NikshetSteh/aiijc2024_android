@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.IntOffsetSerializable
+import ru.naviai.aiijc.OffsetSerializable
 import ru.naviai.aiijc.adjustBitmap
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.SelectField
@@ -268,29 +270,31 @@ fun LoadImage(
                                 onReady(
                                     initialBitmap,
                                     ImageRect(
-                                        IntOffset(offset.x.roundToInt(), offset.y.roundToInt()),
-                                        IntOffset(size.x.roundToInt(), size.y.roundToInt()),
-                                        IntOffset(
+                                        IntOffsetSerializable(offset.x.roundToInt(), offset.y.roundToInt()),
+                                        IntOffsetSerializable(size.x.roundToInt(), size.y.roundToInt()),
+                                        IntOffsetSerializable(
                                             (buffer.x / imageWidth * image.width).roundToInt(),
                                             (buffer.y / imageHeight * image.height).roundToInt(),
                                         ),
-                                        IntOffset(
+                                        IntOffsetSerializable(
                                             (size.x.roundToInt() / imageWidth * image.width).roundToInt(),
                                             (size.y.roundToInt() / imageHeight * image.height).roundToInt()
                                         ),
-                                        Offset(
+                                        OffsetSerializable(
                                             (imageWidth - size.x) / 2 - offset.x,
                                             (screenHeight.dp.toPx() * 3 / 8 - size.y / 2) - offset.y
                                         ),
-                                        Offset(
+                                        OffsetSerializable(
                                             size.x,
                                             size.y
                                         ),
-                                        IntOffset(
+                                        IntOffsetSerializable(
                                             imageWidth.toDp().value.roundToInt(),
                                             imageHeight.toDp().value.roundToInt(),
                                         ),
-                                        IntOffset(offset.x.roundToInt(), offset.y.roundToInt())
+                                        IntOffsetSerializable(
+                                            offset.x.roundToInt(), offset.y.roundToInt()
+                                        )
                                     ),
                                     type
                                 )

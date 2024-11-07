@@ -14,17 +14,26 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.File
+import java.io.FileOutputStream
+import java.io.FileWriter
+import java.text.SimpleDateFormat
+import java.util.*
 
 
-class ImageRect(
-    val imageOffset: IntOffset,
-    val imageSize: IntOffset,
-    val contentOffset: IntOffset? = null,
-    val contentSize: IntOffset? = null,
-    val o1: Offset? = null,
-    val o2: Offset? = null,
-    val cropImageSize: IntOffset? = null,
-    val cropZonePadding: IntOffset? = null
+@Serializable
+data class ImageRect(
+    val imageOffset: IntOffsetSerializable,
+    val imageSize: IntOffsetSerializable,
+    val contentOffset: IntOffsetSerializable? = null,
+    val contentSize: IntOffsetSerializable? = null,
+    val o1: OffsetSerializable? = null,
+    val o2: OffsetSerializable? = null,
+    val cropImageSize: IntOffsetSerializable? = null,
+    val cropZonePadding: IntOffsetSerializable? = null
 )
 
 
@@ -90,3 +99,61 @@ fun makePrediction(
     }
 }
 
+@Serializable
+data class HistoryItem(
+    val modelResults: ModelResults,
+    var date: String = "",
+    var time: String = "",
+    val filtersParams: FiltersParams,
+    val imageRect: ImageRect
+)
+
+
+fun saveResultsWithImageByDate(
+    context: Context,
+    item: HistoryItem,
+    initialBitmap: Bitmap,
+    filteredBitmap: Bitmap
+) {
+    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    val dateDir = File(context.cacheDir, currentDate)
+
+    if (!dateDir.exists()) {
+        dateDir.mkdirs()
+    }
+
+    val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+
+    item.date = currentDate
+    item.time = timestamp
+
+    val imageInitialFile = File(dateDir, "${timestamp}_initial.png")
+    FileOutputStream(imageInitialFile).use { out ->
+        initialBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+    }
+    val imageFilteredFile = File(dateDir, "${timestamp}_filtered.png")
+    FileOutputStream(imageFilteredFile).use { out ->
+        filteredBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+    }
+
+    val resultsFile = File(dateDir, "$timestamp.ser")
+    FileWriter(resultsFile).use { writer ->
+        writer.write(Json.encodeToString(item))
+    }
+}
+
+@Serializable
+class IntOffsetSerializable (
+    var x: Int,
+    var y: Int,
+)
+
+@Serializable
+class OffsetSerializable (
+    var x: Float,
+    var y: Float,
+)
+
+fun OffsetSerializable.toOffset() = Offset(x, y)
+fun IntOffsetSerializable.toOffset() = IntOffset(x, y)
+fun IntOffset.toSerializable() = IntOffsetSerializable(x, y)

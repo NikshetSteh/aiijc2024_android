@@ -80,7 +80,7 @@ fun ResultItem(
                             .alpha(0.4f)
                     },
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(217, 217, 217)
+                        containerColor = color
                     )
                 ) {
 
@@ -151,25 +151,5 @@ fun ResultsItems(
                 color=colors[counter % colors.size]
             )
         }
-    }
-}
-
-
-@Preview
-@Composable
-fun ResultItemPreview() {
-    Box (
-        modifier = Modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        val k = 20f
-        ResultItem(
-            title = "100000",
-            size = Offset(k, k),
-            fontSize = k,
-            color = Color(240, 128, 128),
-            useBox = true
-        )
     }
 }

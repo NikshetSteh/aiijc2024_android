@@ -56,7 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
+import ru.naviai.aiijc.HistoryItem
 import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.IntOffsetSerializable
 import ru.naviai.aiijc.Item
 import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ModelResults
@@ -64,6 +66,8 @@ import ru.naviai.aiijc.adjustBitmap
 import ru.naviai.aiijc.getBrightScore
 import ru.naviai.aiijc.getSharpnessScore
 import ru.naviai.aiijc.makePrediction
+import ru.naviai.aiijc.saveResultsWithImageByDate
+import ru.naviai.aiijc.toOffset
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.ResultsItems
 import java.io.File
@@ -103,19 +107,6 @@ fun Results(
         )
     }
 
-    if (!end) {
-        val file = File(LocalContext.current.cacheDir, "image.jpg")
-        val out = FileOutputStream(file)
-        initialBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-        out.flush()
-        out.close()
-
-        Log.i("kilo", "Final image bright score: $brightScore")
-        Log.i("kilo", "Final image sharpness score: $sharpnessScore")
-
-        end = true
-    }
-
     val screenHeight = LocalConfiguration.current.screenHeightDp
     var prediction by remember {
         mutableStateOf<ModelResults?>(null)
@@ -130,6 +121,21 @@ fun Results(
 
     var mode by remember {
         mutableStateOf(Mode.NONE)
+    }
+
+
+
+    if (!end) {
+        val file = File(LocalContext.current.cacheDir, "image.jpg")
+        val out = FileOutputStream(file)
+        initialBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        out.flush()
+        out.close()
+
+        Log.i("kilo", "Final image bright score: $brightScore")
+        Log.i("kilo", "Final image sharpness score: $sharpnessScore")
+
+        end = true
     }
 
     if (needPrediction && model != null) {
@@ -166,6 +172,17 @@ fun Results(
             onResult = {
                 isLoading = false
                 prediction = it
+
+                saveResultsWithImageByDate(
+                    context = context,
+                    initialBitmap = initialBitmap,
+                    filteredBitmap = bitmap,
+                    item = HistoryItem(
+                        modelResults = prediction!!,
+                        filtersParams = filters,
+                        imageRect = imageRect
+                    )
+                )
             },
             when (type) {
                 stringResource(R.string.type_circle) -> {
@@ -269,8 +286,8 @@ fun Results(
                         imageRect.imageSize.y.toFloat()
                     )
                 } else {
-                    o1 = imageRect.o1
-                    o2 = imageRect.o2!!
+                    o1 = Offset(imageRect.o1.x, imageRect.o1.y)
+                    o2 = Offset(imageRect.o2!!.x, imageRect.o2.y)
                 }
 
                 Log.i("kilo", "o1: $o1, o2: $o2")
@@ -370,8 +387,8 @@ fun Results(
                     if (prediction != null) {
                         ResultsItems(
                             items = prediction!!.items,
-                            imageRect.imageSize,
-                            prediction!!.meanSize,
+                            imageRect.imageSize.toOffset(),
+                            prediction!!.meanSize.toOffset(),
                             actionMode = mode,
                             onChange = { items ->
                                 prediction = ModelResults(
@@ -396,7 +413,7 @@ fun Results(
                                                 it!!.items.size + 1,
                                                 it.items +
                                                         Item(
-                                                            IntOffset(
+                                                            IntOffsetSerializable(
                                                                 (offset.x / imageRect.imageSize.x * 640).roundToInt(),
                                                                 (offset.y / imageRect.imageSize.y * 640).roundToInt(),
                                                             )

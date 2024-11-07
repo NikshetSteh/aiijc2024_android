@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import kotlinx.serialization.Serializable
 import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.CvType
@@ -14,24 +15,24 @@ import org.opencv.imgproc.Imgproc
 import kotlin.math.pow
 
 
-class FiltersParams(
+@Serializable
+data class FiltersParams(
     val sharpness: Float = 0f,
     val brightness: Float = 0f,
     val saturation: Float = 1f,
     val iou: Float = 0.6f,
-    val threshold: Float = 0.2f
-) {
-    fun copy(
-        sharpness: Float = this.sharpness,
-        brightness: Float = this.brightness,
-        saturation: Float = this.saturation,
-        iou: Float = this.iou,
-        threshold: Float = this.threshold
-    ): FiltersParams {
-        return FiltersParams(sharpness, brightness, saturation, iou, threshold)
-    }
-}
+    val threshold: Float = 0.585f
+)
 
+fun FiltersParams.replace(
+    sharpness: Float = this.sharpness,
+    brightness: Float = this.brightness,
+    saturation: Float = this.saturation,
+    iou: Float = this.iou,
+    threshold: Float = this.threshold
+): FiltersParams {
+    return FiltersParams(sharpness, brightness, saturation, iou, threshold)
+}
 
 fun adjustBitmap(
     bitmap: Bitmap,
@@ -61,7 +62,7 @@ fun adjustBitmap(
     colorMatrix.postConcat(saturationMatrix)
 
     // Create a new bitmap to hold the result
-    val resultBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config)
+    val resultBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config!!)
     val canvas = Canvas(resultBitmap)
     val paint = Paint()
 
