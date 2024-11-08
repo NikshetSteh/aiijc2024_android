@@ -115,7 +115,11 @@ fun Photo(
             }
         } catch (e: Exception) {
             Log.w("kilo", e.toString())
-            Toast.makeText(context, "Invalid image format", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                context,
+                context.resources.getString(R.string.error_invalid_format),
+                Toast.LENGTH_LONG
+            ).show()
             isLoading = false
         }
     }
