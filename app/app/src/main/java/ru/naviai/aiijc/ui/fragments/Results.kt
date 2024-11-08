@@ -92,14 +92,15 @@ fun Results(
     lastModel: Model?,
     onFilters: () -> Unit,
     filters: FiltersParams,
-    needToSkipSaveFirst: Boolean
+    needToSkipSaveFirst: Boolean,
+    needSkipWarming: Boolean
 ) {
     var end by remember { mutableStateOf(false) }
 
     val brightScore by remember { mutableStateOf(getBrightScore(initialBitmap)) }
     val sharpnessScore by remember { mutableStateOf(getSharpnessScore(initialBitmap)) }
 
-    var skipWarming by remember { mutableStateOf(false) }
+    var skipWarming by remember { mutableStateOf(needSkipWarming) }
 
     val bitmap by remember {
         mutableStateOf(

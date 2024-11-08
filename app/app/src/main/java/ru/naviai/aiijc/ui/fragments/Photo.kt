@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
@@ -88,23 +89,33 @@ fun Photo(
         contract =
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        var bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            uri?.let {
-                ImageDecoder.createSource(
-                    context.contentResolver,
-                    it
-                )
-            }?.let { ImageDecoder.decodeBitmap(it) }
-        } else {
-            @Suppress("DEPRECATION")
-            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        if (uri != null) {
+            Log.i("kilo", uri.path.toString())
         }
 
-        if (bitmap != null) {
-            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+        try {
+            var bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                uri?.let {
+                    ImageDecoder.createSource(
+                        context.contentResolver,
+                        it
+                    )
+                }?.let { ImageDecoder.decodeBitmap(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+            }
 
-            onLoad(bitmap!!, type)
-        } else {
+            if (bitmap != null) {
+                bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+
+                onLoad(bitmap!!, type)
+            } else {
+                isLoading = false
+            }
+        } catch (e: Exception) {
+            Log.w("kilo", e.toString())
+            Toast.makeText(context, "Invalid image format", Toast.LENGTH_LONG).show()
             isLoading = false
         }
     }

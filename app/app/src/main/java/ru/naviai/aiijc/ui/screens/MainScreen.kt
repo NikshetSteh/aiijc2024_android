@@ -54,6 +54,7 @@ fun MainScreen(
     var initialBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var filters by remember { mutableStateOf(FiltersParams()) }
     var needSkipSave by remember { mutableStateOf(false) }
+    var needSkipWarming by remember {mutableStateOf(false)}
 
     var imageRect by remember {
         mutableStateOf(
@@ -149,7 +150,8 @@ fun MainScreen(
                             state = ScreenState.Filters
                         },
                         filters = filters,
-                        needToSkipSaveFirst = needSkipSave
+                        needToSkipSaveFirst = needSkipSave,
+                        needSkipWarming = needSkipWarming,
                     )
                 }
             }
@@ -172,6 +174,7 @@ fun MainScreen(
             ScreenState.History -> {
                 History(
                     onLoad = { initialBitmapLoad, filtersParamsLoad, imageRectLoad, typeLoad ->
+                        needSkipWarming = true
                         needSkipSave = true
                         previousState = state
                         state = ScreenState.Results

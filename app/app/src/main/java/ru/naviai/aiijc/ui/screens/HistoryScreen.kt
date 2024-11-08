@@ -121,10 +121,8 @@ fun HistoryItemView(
 
 
 fun sortElementsByDateTime(elements: List<HistoryItemCombineData>): List<HistoryItemCombineData> {
-    // Define the date format
     val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
-    // Sort the elements based on the parsed date
     return elements.sortedByDescending { dateFormat.parse(it.item.datetime) }
 }
 
