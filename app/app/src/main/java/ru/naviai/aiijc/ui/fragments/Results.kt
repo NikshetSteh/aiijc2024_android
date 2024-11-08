@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -29,6 +31,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -51,17 +53,22 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import org.opencv.android.Utils
+import androidx.compose.ui.window.Dialog
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.IntOffsetSerializable
 import ru.naviai.aiijc.Item
 import ru.naviai.aiijc.Model
 import ru.naviai.aiijc.ModelResults
 import ru.naviai.aiijc.adjustBitmap
+import ru.naviai.aiijc.getBrightScore
+import ru.naviai.aiijc.getSharpnessScore
 import ru.naviai.aiijc.makePrediction
+import ru.naviai.aiijc.toOffset
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.ResultsItems
+import ru.naviai.aiijc.ui.SelectField
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.max
@@ -79,27 +86,21 @@ enum class Mode {
 fun Results(
     initialBitmap: Bitmap,
     imageRect: ImageRect,
-    type: String,
+    initialType: String,
     onBack: () -> Unit,
     onModelLoaded: (Model) -> Unit,
     lastModel: Model?,
     onFilters: () -> Unit,
-    filters: FiltersParams
+    filters: FiltersParams,
+    needToSkipSaveFirst: Boolean,
+    needSkipWarming: Boolean
 ) {
     var end by remember { mutableStateOf(false) }
 
-    if(!end){
-        val file = File(LocalContext.current.cacheDir, "image.jpg")
-        val out = FileOutputStream(file)
-        initialBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-        out.flush()
-        out.close()
+    val brightScore by remember { mutableStateOf(getBrightScore(initialBitmap)) }
+    val sharpnessScore by remember { mutableStateOf(getSharpnessScore(initialBitmap)) }
 
-
-
-        end = true
-    }
-
+    var skipWarming by remember { mutableStateOf(needSkipWarming) }
 
     val bitmap by remember {
         mutableStateOf(
@@ -107,8 +108,15 @@ fun Results(
         )
     }
 
+    var needToSkipSave by remember {
+        mutableStateOf(needToSkipSaveFirst)
+    }
+
+    var currentType by remember {
+        mutableStateOf(initialType)
+    }
+
     val screenHeight = LocalConfiguration.current.screenHeightDp
-    val screenWidth = LocalConfiguration.current.screenWidthDp
     var prediction by remember {
         mutableStateOf<ModelResults?>(null)
     }
@@ -118,13 +126,35 @@ fun Results(
     var modelLoaded by remember { mutableStateOf(false) }
 
     var needPrediction by remember { mutableStateOf(true) }
-    var isLoading by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(brightScore >= 60 && sharpnessScore >= 500) }
+
+    Log.i("kilo", "Is loading: $isLoading")
 
     var mode by remember {
         mutableStateOf(Mode.NONE)
     }
 
-    if (needPrediction && model != null) {
+
+
+    if (!end) {
+        val file = File(LocalContext.current.cacheDir, "image.jpg")
+        val out = FileOutputStream(file)
+        initialBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        out.flush()
+        out.close()
+
+        Log.i("kilo", "Final image bright score: $brightScore")
+        Log.i("kilo", "Final image sharpness score: $sharpnessScore")
+
+        end = true
+    }
+
+    if (
+        needPrediction &&
+        model != null &&
+        (skipWarming || (brightScore >= 60 && sharpnessScore >= 500))
+    ) {
+        isLoading = true
         val cropped: Bitmap
         if (imageRect.contentOffset == null) {
             cropped = Bitmap.createBitmap(
@@ -159,7 +189,7 @@ fun Results(
                 isLoading = false
                 prediction = it
             },
-            when (type) {
+            when (currentType) {
                 stringResource(R.string.type_circle) -> {
                     Model.PredictionsType.CIRCLE
                 }
@@ -168,16 +198,21 @@ fun Results(
                     Model.PredictionsType.RECTANGLE
                 }
 
-                stringResource(R.string.type_quad) -> {
-                    Model.PredictionsType.QUAD
+                stringResource(R.string.type_all) -> {
+                    Model.PredictionsType.ALL
                 }
 
                 else -> {
-                    Model.PredictionsType.CIRCLE
+                    Model.PredictionsType.ALL
                 }
             },
             filters.iou,
-            filters.threshold
+            filters.threshold,
+            initialBitmap,
+            context,
+            filters,
+            imageRect,
+            !needToSkipSave
         )
     }
 
@@ -202,8 +237,17 @@ fun Results(
     var offset by remember { mutableStateOf(Offset.Zero) }
     val state = rememberTransformableState { zoomChange, offsetChange, _ ->
         scale = max(min(scale * zoomChange, 3f), 1f)
-        offset += offsetChange
+        offset += offsetChange * scale
     }
+
+    ImageQualityWarning(
+        brightScore < 60 && !skipWarming,
+        sharpnessScore < 500 && !skipWarming,
+        onBack = onBack,
+        onFilters = onFilters,
+        onContinue = { skipWarming = true; isLoading = true },
+        skipWarming
+    )
 
     Box(
         modifier = Modifier
@@ -234,10 +278,10 @@ fun Results(
                 modifier = Modifier
                     .width(bitmap.width.toDp())
                     .height(bitmap.height.toDp())
-                    .offset{
+                    .offset {
                         IntOffset(
-                            - imageRect.imageOffset.x + if(imageRect.cropZonePadding != null) imageRect.cropZonePadding.x else 0,
-                            - imageRect.imageOffset.y + if(imageRect.cropZonePadding != null) imageRect.cropZonePadding.y else 0
+                            -imageRect.imageOffset.x + if (imageRect.cropZonePadding != null) imageRect.cropZonePadding.x else 0,
+                            -imageRect.imageOffset.y + if (imageRect.cropZonePadding != null) imageRect.cropZonePadding.y else 0
                         )
                     }
             ) {
@@ -254,8 +298,8 @@ fun Results(
                         imageRect.imageSize.y.toFloat()
                     )
                 } else {
-                    o1 = imageRect.o1
-                    o2 = imageRect.o2!!
+                    o1 = Offset(imageRect.o1.x, imageRect.o1.y)
+                    o2 = Offset(imageRect.o2!!.x, imageRect.o2.y)
                 }
 
                 Log.i("kilo", "o1: $o1, o2: $o2")
@@ -355,8 +399,8 @@ fun Results(
                     if (prediction != null) {
                         ResultsItems(
                             items = prediction!!.items,
-                            imageRect.imageSize,
-                            prediction!!.meanSize,
+                            imageRect.imageSize.toOffset(),
+                            prediction!!.meanSize.toOffset(),
                             actionMode = mode,
                             onChange = { items ->
                                 prediction = ModelResults(
@@ -365,9 +409,7 @@ fun Results(
                                     prediction!!.meanSize
                                 )
                             },
-                            isRectangle = type == stringResource(R.string.type_rectangle) || type == stringResource(
-                                R.string.type_quad
-                            )
+                            isRectangle = currentType == stringResource(R.string.type_rectangle)
                         )
                     }
 
@@ -383,7 +425,7 @@ fun Results(
                                                 it!!.items.size + 1,
                                                 it.items +
                                                         Item(
-                                                            IntOffset(
+                                                            IntOffsetSerializable(
                                                                 (offset.x / imageRect.imageSize.x * 640).roundToInt(),
                                                                 (offset.y / imageRect.imageSize.y * 640).roundToInt(),
                                                             )
@@ -414,7 +456,21 @@ fun Results(
                             .height(64.dp)
                             .width(64.dp)
                     )
-                } else {
+                } else if (prediction != null) {
+                    SelectField(
+                        modifier = Modifier.width(200.dp),
+                        label = stringResource(R.string.label_type),
+                        options = listOf(
+                            stringResource(R.string.type_circle),
+                            stringResource(R.string.type_rectangle),
+                            stringResource(R.string.type_all),
+                        ),
+                        onChange = {
+                            currentType = it
+                            needPrediction = true
+                        },
+                        value = currentType
+                    )
                     Row {
                         IconButton(onClick = {
                             mode = if (mode != Mode.DELETE) {
@@ -481,3 +537,71 @@ fun Results(
     }
 }
 
+
+@Composable
+fun ImageQualityWarning(
+    isTooDark: Boolean = false,
+    isTooBlurry: Boolean = false,
+    onBack: () -> Unit = {},
+    onFilters: () -> Unit = {},
+    onContinue: () -> Unit = {},
+    skipped: Boolean = false
+) {
+    if ((!isTooDark && !isTooBlurry) || skipped) {
+        return
+    }
+
+    val text = if (isTooDark && isTooBlurry) {
+        stringResource(R.string.message_too_dark_and_too_blurry)
+    } else if (isTooBlurry) {
+        stringResource(R.string.message_too_blurry)
+    } else {
+        stringResource(R.string.message_too_dark)
+    }
+
+    Dialog(onDismissRequest = { }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = text,
+                    modifier = Modifier.padding(16.dp),
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    TextButton(
+                        onClick = onBack,
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text(stringResource(R.string.action_back))
+                    }
+                    TextButton(
+                        onClick = onFilters,
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text(stringResource(R.string.action_filters))
+                    }
+                    TextButton(
+                        onClick = onContinue,
+                        modifier = Modifier.padding(8.dp),
+                    ) {
+                        Text(stringResource(R.string.action_close))
+                    }
+                }
+            }
+        }
+    }
+}

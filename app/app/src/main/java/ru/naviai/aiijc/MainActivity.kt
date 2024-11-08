@@ -107,7 +107,12 @@ class MainActivity : ComponentActivity() {
         val sharedPreferences: SharedPreferences =
             newBase!!.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
 
-        if (sharedPreferences.getString("language", "en") == "ru") {
+        val isDefaultRussian = newBase.resources.configuration.locales[0].language == "ru_RU"
+
+        if (sharedPreferences.getString(
+                "language",
+                if(isDefaultRussian) "ru" else "en"
+        ) == "ru") {
             super.attachBaseContext(ApplicationLanguageHelper.wrap(newBase, "ru"))
             return
         }

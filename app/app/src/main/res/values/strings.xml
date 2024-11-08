@@ -17,7 +17,6 @@
     <string name="action_reload">Reload</string>
     <string name="action_new_image">New Image</string>
     <string name="type_rectangle">Rectangle</string>
-    <string name="type_quad">Quad</string>
     <string name="toast_saved">The changes will take effect after the restart</string>
     <string name="title_sharpness">Sharpness:</string>
     <string name="title_saturation">Saturation:</string>
@@ -28,4 +27,10 @@
     <string name="action_filters">Filters</string>
     <string name="title_iou">Merging labels</string>
     <string name="title_threshold">Sensitivity</string>
+    <string name="message_too_dark_and_too_blurry">Image is too dark and blurry. You can try use filters to fix it or make new photo</string>
+    <string name="message_too_blurry">Image is too blurry. You can try use filters to fix it or make new photo</string>
+    <string name="message_too_dark">Image is too dark. You can try use filters to fix it or make new photo</string>
+    <string name="action_close">Close</string>
+    <string name="type_all">All</string>
+    <string name="label_count">Count</string>
 </resources>

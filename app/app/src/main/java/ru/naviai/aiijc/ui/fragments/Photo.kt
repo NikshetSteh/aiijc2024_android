@@ -5,10 +5,13 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,21 +36,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.CameraPreview
 import ru.naviai.aiijc.ImageRect
+import ru.naviai.aiijc.IntOffsetSerializable
 import ru.naviai.aiijc.takePhoto
 import ru.naviai.aiijc.ui.EditRectangle
 import ru.naviai.aiijc.ui.SelectField
@@ -57,9 +60,10 @@ import kotlin.math.roundToInt
 @Composable
 fun Photo(
     onMenu: () -> Unit,
-    onLoad: (Bitmap) -> Unit = {},
+    onLoad: (Bitmap, String) -> Unit = { _, _ -> },
     onCapture: (Bitmap, ImageRect, String) -> Unit = { _, _, _ -> },
-    startType: String
+    startType: String,
+    onHistory: (String) -> Unit,
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp
@@ -72,33 +76,46 @@ fun Photo(
 
     var type by remember { mutableStateOf(startType) }
 
+    var focus by remember { mutableStateOf<Offset?>(null) }
+
     val height = screenHeight / 4f * 3 - verticalPaddings * 2
     val width = screenWidth - horizontalPaddings * 2
 
     var flashLight by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
     val launcher = rememberLauncherForActivityResult(
         contract =
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        var bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            uri?.let {
-                ImageDecoder.createSource(
-                    context.contentResolver,
-                    it
-                )
-            }?.let { ImageDecoder.decodeBitmap(it) }
-        } else {
-            @Suppress("DEPRECATION")
-            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        if (uri != null) {
+            Log.i("kilo", uri.path.toString())
         }
 
-        if (bitmap != null) {
-            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+        try {
+            var bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                uri?.let {
+                    ImageDecoder.createSource(
+                        context.contentResolver,
+                        it
+                    )
+                }?.let { ImageDecoder.decodeBitmap(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+            }
 
-            onLoad(bitmap!!)
-        } else {
+            if (bitmap != null) {
+                bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+
+                onLoad(bitmap!!, type)
+            } else {
+                isLoading = false
+            }
+        } catch (e: Exception) {
+            Log.w("kilo", e.toString())
+            Toast.makeText(context, "Invalid image format", Toast.LENGTH_LONG).show()
             isLoading = false
         }
     }
@@ -120,15 +137,26 @@ fun Photo(
         modifier = Modifier.fillMaxWidth()
     ) {
         val imageCapture = CameraPreview(
-            modifier = Modifier.fillMaxSize(),
-            flashLight = flashLight
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures { clickOffset ->
+                        focus = clickOffset
+                        Log.i("kilo", "Tester click")
+
+                    }
+                },
+            flashLight = flashLight,
+            focus = if (focus != null) {
+                val buf = focus; focus = null; buf
+            } else null
         )
 
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            val o1 =  Offset(
+            val o1 = Offset(
                 (screenWidth.dp.toPx() - size.x) / 2f,
                 (screenHeight.dp.toPx() * 3 / 8 - size.y / 2)
             )
@@ -189,8 +217,31 @@ fun Photo(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = androidx.compose.ui.Alignment.TopStart
         ) {
-            IconButton(onClick = onMenu, enabled = !isLoading) {
-                Icon(Icons.Filled.Menu, contentDescription = null, tint = Color.White)
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = onMenu,
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        Icons.Filled.Menu,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                }
+
+                IconButton(
+                    onClick = { onHistory(type) },
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.history),
+                        contentDescription = "History",
+                        tint = Color.White
+                    )
+                }
             }
         }
 
@@ -234,7 +285,7 @@ fun Photo(
                     options = listOf(
                         stringResource(R.string.type_circle),
                         stringResource(R.string.type_rectangle),
-                        stringResource(R.string.type_quad),
+                        stringResource(R.string.type_all),
                     ),
                     onChange = {
                         type = it
@@ -286,8 +337,11 @@ fun Photo(
                                 onCapture(
                                     resized,
                                     ImageRect(
-                                        IntOffset(0, 0),
-                                        IntOffset(size.x.roundToInt(), size.y.roundToInt()),
+                                        IntOffsetSerializable(0, 0),
+                                        IntOffsetSerializable(
+                                            size.x.roundToInt(),
+                                            size.y.roundToInt()
+                                        ),
                                     ),
                                     type
                                 )

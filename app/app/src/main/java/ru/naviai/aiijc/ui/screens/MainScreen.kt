@@ -20,13 +20,14 @@ import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.Model
+import ru.naviai.aiijc.toSerializable
 import ru.naviai.aiijc.ui.fragments.Filters
 import ru.naviai.aiijc.ui.fragments.LoadImage
 import ru.naviai.aiijc.ui.fragments.Photo
 import ru.naviai.aiijc.ui.fragments.Results
 
 enum class ScreenState {
-    Camera, LoadImage, Results, Filters
+    Camera, LoadImage, Results, Filters, History
 }
 
 @Composable
@@ -36,7 +37,7 @@ fun MainScreen(
 ) {
     var opencvLoaded by remember { mutableStateOf(false) }
 
-    if(!opencvLoaded) {
+    if (!opencvLoaded) {
         if (OpenCVLoader.initLocal()) {
             Log.i("kilo", "OpenCV loaded")
             opencvLoaded = true
@@ -52,13 +53,23 @@ fun MainScreen(
     var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var initialBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var filters by remember { mutableStateOf(FiltersParams()) }
+    var needSkipSave by remember { mutableStateOf(false) }
+    var needSkipWarming by remember {mutableStateOf(false)}
 
-    var imageRect by remember { mutableStateOf(ImageRect(IntOffset.Zero, IntOffset.Zero)) }
+    var imageRect by remember {
+        mutableStateOf(
+            ImageRect(
+                IntOffset.Zero.toSerializable(), IntOffset.Zero.toSerializable()
+            )
+        )
+    }
     var model by remember { mutableStateOf<Model?>(null) }
 
     var type by remember {
         mutableStateOf(resources.getString(R.string.type_circle))
     }
+
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -73,11 +84,12 @@ fun MainScreen(
                             }
                         }
                     },
-                    onLoad = {
+                    onLoad = { bitmap, newType ->
                         previousState = ScreenState.Camera
                         state = ScreenState.LoadImage
-                        currentBitmap = it
-                        initialBitmap = it
+                        currentBitmap = bitmap
+                        initialBitmap = bitmap
+                        type = newType
                     },
                     onCapture = { bitmap, rect, newType ->
                         previousState = ScreenState.Camera
@@ -87,7 +99,11 @@ fun MainScreen(
                         imageRect = rect
                         type = newType
                     },
-                    startType = type
+                    startType = type,
+                    onHistory = {
+                        state = ScreenState.History
+                        type = it
+                    }
                 )
             }
 
@@ -102,7 +118,10 @@ fun MainScreen(
                         imageRect = rect
                         type = newType
                     },
-                    onBack = { state = ScreenState.Camera },
+                    onBack = {
+                        state = ScreenState.Camera
+                        type = it
+                    },
                     startType = type,
                     filters = filters,
                     onFilters = {
@@ -117,18 +136,22 @@ fun MainScreen(
                     Results(
                         it,
                         imageRect = imageRect,
-                        type = type,
+                        initialType = type,
                         onBack = {
+                            needSkipSave = false
                             previousState = state
                             state = ScreenState.Camera
                         },
                         lastModel = model,
                         onModelLoaded = { newModel -> model = newModel },
                         onFilters = {
+                            needSkipSave = false
                             previousState = state
                             state = ScreenState.Filters
                         },
-                        filters = filters
+                        filters = filters,
+                        needToSkipSaveFirst = needSkipSave,
+                        needSkipWarming = needSkipWarming,
                     )
                 }
             }
@@ -142,9 +165,40 @@ fun MainScreen(
                             state = previousState
                             previousState = ScreenState.Filters
                             filters = newFilters
-                        }
+                        },
+                        filters
                     )
                 }
+            }
+
+            ScreenState.History -> {
+                History(
+                    onLoad = { initialBitmapLoad, filtersParamsLoad, imageRectLoad, typeLoad ->
+                        needSkipWarming = true
+                        needSkipSave = true
+                        previousState = state
+                        state = ScreenState.Results
+                        initialBitmap = initialBitmapLoad
+                        currentBitmap = initialBitmap
+                        filters = filtersParamsLoad
+                        imageRect = imageRectLoad
+                        type = when (typeLoad) {
+                            Model.PredictionsType.ALL -> context.resources.getString(
+                                R.string.type_all
+                            )
+                            Model.PredictionsType.CIRCLE -> context.resources.getString(
+                                R.string.type_circle
+                            )
+                            Model.PredictionsType.RECTANGLE -> context.resources.getString(
+                                R.string.type_rectangle
+                            )
+                        }
+                    },
+                    onBack = {
+                        state = ScreenState.Camera
+                        previousState = ScreenState.History
+                    }
+                )
             }
         }
     }

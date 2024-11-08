@@ -40,29 +40,27 @@ import ru.NaviAI.aiijc.R
 import ru.naviai.aiijc.FiltersParams
 import ru.naviai.aiijc.ImageRect
 import ru.naviai.aiijc.adjustBitmap
+import ru.naviai.aiijc.replace
+import ru.naviai.aiijc.toOffset
 
 
 @Composable
 fun Filters(
     bitmap: Bitmap,
     imageRect: ImageRect,
-    onReady: (filtersParams: FiltersParams) -> Unit
+    onReady: (filtersParams: FiltersParams) -> Unit,
+    startFiltersParams: FiltersParams?
 ) {
-//    var brightness by remember { mutableStateOf(0f) }
-//    var saturation by remember { mutableStateOf(1f) }
-//    var iouCoefficient by remember { mutableStateOf(0.6f) }
-//    var thresholdCoefficient by remember { mutableStateOf(0.2f) }
-//    var sharpness by remember { mutableStateOf(0f) }
-
     var currentFilters by remember {
         mutableStateOf(
-            FiltersParams(
-                brightness = 0f,
-                saturation = 1f,
-                iou = 0.6f,
-                threshold = 0.2f,
-                sharpness = 0f
-            )
+            startFiltersParams
+                ?: FiltersParams(
+                    brightness = 0f,
+                    saturation = 1f,
+                    iou = 0.6f,
+                    threshold = 0.2f,
+                    sharpness = 0f
+                )
         )
     }
 
@@ -77,7 +75,7 @@ fun Filters(
             modifier = Modifier
                 .fillMaxSize()
                 .offset {
-                    imageRect.imageOffset
+                    imageRect.imageOffset.toOffset()
                 },
             contentAlignment = androidx.compose.ui.Alignment.TopCenter
         ) {
@@ -134,7 +132,7 @@ fun Filters(
                     Slider(
                         value = (currentFilters.brightness + 100) / 200,
                         onValueChange = {
-                            currentFilters = currentFilters.copy(brightness = it * 200 - 100)
+                            currentFilters = currentFilters.replace(brightness = it * 200 - 100)
                         }
                     )
 
@@ -145,7 +143,7 @@ fun Filters(
                     Slider(
                         value = currentFilters.sharpness / 100,
                         onValueChange = {
-                            currentFilters = currentFilters.copy(sharpness = it * 100)
+                            currentFilters = currentFilters.replace(sharpness = it * 100)
                         }
                     )
 
@@ -154,9 +152,9 @@ fun Filters(
                         fontSize = MaterialTheme.typography.bodySmall.fontSize
                     )
                     Slider(
-                        value = (currentFilters.saturation + 100) / 200,
+                        value = currentFilters.saturation / 7,
                         onValueChange = {
-                            currentFilters = currentFilters.copy(saturation = it * 200 - 100)
+                            currentFilters = currentFilters.replace(saturation = it * 7)
                         }
                     )
 
@@ -165,10 +163,10 @@ fun Filters(
                         fontSize = MaterialTheme.typography.bodySmall.fontSize
                     )
                     Slider(
-                        value = 1 - (currentFilters.threshold - 0.05f) / 0.45f,
+                        value = 1 - (currentFilters.threshold - 0.4f) / 0.4f,
                         onValueChange = {
                             currentFilters =
-                                currentFilters.copy(threshold = (-it + 1) * 0.45f + 0.05f)
+                                currentFilters.replace(threshold = (-it + 1) * 0.45f + 0.05f)
                         }
                     )
 
@@ -188,13 +186,7 @@ fun Filters(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         Button(onClick = {
-                            currentFilters = FiltersParams(
-                                brightness = 0f,
-                                saturation = 1f,
-                                iou = 0.6f,
-                                threshold = 0.2f,
-                                sharpness = 0f
-                            )
+                            currentFilters = FiltersParams()
                         }) {
                             Text(stringResource(R.string.action_reset))
                         }
@@ -227,11 +219,3 @@ fun Filters(
         }
     }
 }
-
-//
-//fun applyFilters(
-//    bitmap: Bitmap,
-//    filtersParams: FiltersParams
-//): Bitmap {
-//    return adjustBitmap(bitmap, filtersParams.brightness, filtersParams.contrast)
-//}
